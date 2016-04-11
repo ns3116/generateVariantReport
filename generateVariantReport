@@ -33,15 +33,14 @@ nonTrioToTrio <- function(data){
     colnames(data)[which(colnames(data) %in% c("Sample.Name"))] <- c("Child")
     data <- data[which(
                        (data$subRVIS.Domain.Score <= 40 | 
-                       is.na(data$subRVIS.Domain.Score))),]
-                       #(data$Polyphen.Humvar.Score >= .95 |
-                       #is.na(data$Polyphen.Humvar.Score))),]
+                       is.na(data$subRVIS.Domain.Score)) &
+                       (data$Polyphen.Humvar.Score >= .95 |
+                       is.na(data$Polyphen.Humvar.Score))),]
     return(data)
 }
 
 ##################################################################################################################
 scriptPath <- getScriptPath()
-
 
 #Opt parse
 option_list = list(
@@ -53,9 +52,8 @@ option_list = list(
     )
     #make_option(c("-r","--raw"), type="character", default="atav_summary.xlsx", help="ATAV raw output summary excel [default = atav_summary.xlsx")
 
-opt_parser = OptionParser(option_list=option_list);
-opt = parse_args(opt_parser);
-
+opt_parser = OptionParser(option_list=option_list)
+opt = parse_args(opt_parser)
 
 #read csv file as dataframe for dnm, chet, and add_anno, and MGI essential gene list
 source(paste(scriptPath,"/tier1_filters.R",sep=""))
@@ -71,6 +69,9 @@ colnames(dnm.data)[dim(dnm.data)[2]] <- "MGI.Essential"
 if(opt$nontrio){
     dnm <- dnm.data[which(dnm.data$Genotype == "het"),]
     dnm <- nonTrioToTrio(dnm)
+    pdnm <- dnm[which(dnm$Gene.Name %in% names(table(dnm$Gene.Name)[which(table(dnm$Gene.Name) == 1)])),]
+    pchet <- dnm[which(dnm$Gene.Name %in% names(table(dnm$Gene.Name)[which(table(dnm$Gene.Name) > 1)])),]
+    browser()
 }else{
     data <- Filter.by.Flag(dnm.data,'de novo', strict = TRUE)
     dnm <- Filter.for.denovo(data)
@@ -120,14 +121,26 @@ chet <- rbind(chet,pchet)
 
 outwb <- createWorkbook()
 sum.sheet <- createSheet(outwb, sheetName = "Summary")
-dnm.sheet <- createSheet(outwb, sheetName = "DNM")
-hem.sheet <- createSheet(outwb, sheetName = "HEM")
-hom.sheet <- createSheet(outwb, sheetName = "HOM")
-chet.sheet <- createSheet(outwb, sheetName = "CHET")
-addDataFrame(dnm, dnm.sheet, row.names=F, showNA=F)
-addDataFrame(hem, hem.sheet, row.names=F, showNA=F)
-addDataFrame(hom, hom.sheet, row.names=F, showNA=F)
-addDataFrame(chet, chet.sheet, row.names=F, showNA=F)
+if(!opt$nontrio){
+    dnm.sheet <- createSheet(outwb, sheetName = "DNM")
+    hem.sheet <- createSheet(outwb, sheetName = "HEM")
+    hom.sheet <- createSheet(outwb, sheetName = "HOM")
+    chet.sheet <- createSheet(outwb, sheetName = "CHET")
+    addDataFrame(dnm, dnm.sheet, row.names=F, showNA=F)
+    addDataFrame(hem, hem.sheet, row.names=F, showNA=F)
+    addDataFrame(hom, hom.sheet, row.names=F, showNA=F)
+    addDataFrame(chet, chet.sheet, row.names=F, showNA=F)
+}else{
+    dnm.sheet <- createSheet(outwb, sheetName = "pDNM")
+    hem.sheet <- createSheet(outwb, sheetName = "pHEM")
+    hom.sheet <- createSheet(outwb, sheetName = "pHOM")
+    chet.sheet <- createSheet(outwb, sheetName = "pCHET")
+    addDataFrame(pdnm, dnm.sheet, row.names=F, showNA=F)
+    addDataFrame(hem, hem.sheet, row.names=F, showNA=F)
+    addDataFrame(hom, hom.sheet, row.names=F, showNA=F)
+    addDataFrame(pchet, chet.sheet, row.names=F, showNA=F)
+}
+
 
 #LoFd <- read.table(opt$LoFd,header=T)
 sum = NULL
@@ -141,17 +154,21 @@ LoF_var <- c(
 )
 
 for(samp in unique(c(as.vector(dnm$Child),as.vector(hem$Child),as.vector(hom$Child),as.vector(chet$Child)))){
-if(grepl("*sqc*",samp,ignore.case=T)){    
 
 Ndnm <- length(which(dnm$Child==samp))
 Nhem <- length(which(hem$Child==samp))
 Nhom <- length(which(hom$Child==samp))
 Nchet <- length(which(chet$Child==samp))
+if(opt$nontrio){
+    Ndnm <- length(which(pdnm$Child==samp))
+    Nchet <- length(which(pchet$Child==samp))
+}
+
 samp.dnm.tierOne <- dnm[which(dnm$Child==samp),]
 samp.hom.tierOne <- hom[which(hom$Child==samp),]
 samp.hem.tierOne <- hem[which(hem$Child==samp),]
 samp.chet.tierOne <- chet[which(chet$Child==samp),]
-
+#HZ OMIM
 samp.dnm.hzo <- samp.dnm.tierOne[which((samp.dnm.tierOne$Polyphen.Humvar.Score >= .95  | 
                                         samp.dnm.tierOne$Function %in%  LoF_var)  & 
                                         ((samp.dnm.tierOne$X0.1.RVIS..EVS. <= 25  &
@@ -167,7 +184,7 @@ samp.dnm.hzo <- samp.dnm.tierOne[which((samp.dnm.tierOne$Polyphen.Humvar.Score >
                                         !is.na(samp.dnm.tierOne$OMIM.Disease.Name)),
                                 ]$Gene.Name
 samp.hzo <- gsub("'","",unique(c(as.vector(samp.dnm.hzo))))
-
+#HZ Essential
 samp.dnm.hze <- samp.dnm.tierOne[which((samp.dnm.tierOne$Polyphen.Humvar.Score >= .95  | 
                                         samp.dnm.tierOne$Function %in%  LoF_var)  & 
                                         ((samp.dnm.tierOne$X0.1.RVIS..EVS. <= 25  &
@@ -183,15 +200,45 @@ samp.dnm.hze <- samp.dnm.tierOne[which((samp.dnm.tierOne$Polyphen.Humvar.Score >
                                         (samp.dnm.tierOne$MGI.Essential == T)),
                                 ]$Gene.Name
 samp.hze <- gsub("'","",unique(c(as.vector(samp.dnm.hze))))
-
+#ClinGen/Var LoF
 haploinsufficient_or_recessive = c("Sufficient evidence","Nullizygosity")
-samp.dnm.clin <- gsub("'","",samp.dnm.tierOne[which(samp.dnm.tierOne$ClinGen.HaploinsufficiencyDesc == "Sufficient evidence" & samp.dnm.tierOne$Function %in% LoF_var),]$Gene.Name)
-samp.hom.clin <- gsub("'","",samp.hom.tierOne[which(samp.hom.tierOne$ClinGen.HaploinsufficiencyDesc %in% haploinsufficient_or_recessive & samp.hom.tierOne$Function %in% LoF_var),]$Gene.Name)
-samp.hem.clin <- gsub("'","",samp.hem.tierOne[which(samp.hem.tierOne$ClinGen.HaploinsufficiencyDesc %in% haploinsufficient_or_recessive & samp.hem.tierOne$Function %in% LoF_var),]$Gene.Name)
-samp.1chet.clin <- gsub("'","",samp.chet.tierOne[which(samp.chet.tierOne$ClinGen.HaploinsufficiencyDesc.1 == "Sufficient evidence" & (samp.chet.tierOne$Function.1 %in% LoF_var | samp.chet.tierOne$Function.2 %in% LoF_var)),]$Gene.Name)
-samp.2chet.clin <- gsub("'","",samp.chet.tierOne[which(samp.chet.tierOne$ClinGen.HaploinsufficiencyDesc.1 %in% haploinsufficient_or_recessive & (samp.chet.tierOne$Function.1 %in% LoF_var & samp.chet.tierOne$Function.2 %in% LoF_var)),]$Gene.Name)
+samp.dnm.clin <- gsub("'","",samp.dnm.tierOne[which(samp.dnm.tierOne$Function %in% LoF_var &
+                                (samp.dnm.tierOne$ClinGen.HaploinsufficiencyDesc == "Sufficient evidence" |
+                                samp.dnm.tierOne$ClinVar.Pathogenic.Indel.Count > 0 |
+                                samp.dnm.tierOne$Clinvar.Pathogenic.CNV.Count > 0 |
+                                samp.dnm.tierOne$ClinVar.Pathogenic.SNV.Splice.Count > 0 |
+                                samp.dnm.tierOne$ClinVar.Pathogenic.SNV.Nonsense.Count > 0)
+                                ),]$Gene.Name)
+samp.hom.clin <- gsub("'","",samp.hom.tierOne[which(samp.hom.tierOne$Function %in% LoF_var &
+                                (samp.hom.tierOne$ClinGen.HaploinsufficiencyDesc %in% haploinsufficient_or_recessive |
+                                samp.hom.tierOne$ClinVar.Pathogenic.Indel.Count > 0 |
+                                samp.hom.tierOne$Clinvar.Pathogenic.CNV.Count > 0 |
+                                samp.hom.tierOne$ClinVar.Pathogenic.SNV.Splice.Count > 0 |
+                                samp.hom.tierOne$ClinVar.Pathogenic.SNV.Nonsense.Count > 0)
+                                ),]$Gene.Name)
+samp.hem.clin <- gsub("'","",samp.hem.tierOne[which(samp.hem.tierOne$Function %in% LoF_var &
+                                (samp.hem.tierOne$ClinGen.HaploinsufficiencyDesc %in% haploinsufficient_or_recessive |
+                                samp.hem.tierOne$ClinVar.Pathogenic.Indel.Count > 0 |
+                                samp.hem.tierOne$Clinvar.Pathogenic.CNV.Count > 0 |
+                                samp.hem.tierOne$ClinVar.Pathogenic.SNV.Splice.Count > 0 |
+                                samp.hem.tierOne$ClinVar.Pathogenic.SNV.Nonsense.Count > 0) 
+                                ),]$Gene.Name)
+samp.1chet.clin <- gsub("'","",samp.chet.tierOne[which((samp.chet.tierOne$Function.1 %in% LoF_var | samp.chet.tierOne$Function.2 %in% LoF_var) &
+                                (samp.chet.tierOne$ClinGen.HaploinsufficiencyDesc.1 == "Sufficient evidence" |
+                                samp.chet.tierOne$ClinVar.Pathogenic.Indel.Count...1. > 0 |
+                                samp.chet.tierOne$Clinvar.Pathogenic.CNV.Count...1. > 0 |
+                                samp.chet.tierOne$ClinVar.Pathogenic.SNV.Splice.Count...1. > 0 |
+                                samp.chet.tierOne$ClinVar.Pathogenic.SNV.Nonsense.Count...1. > 0 | 
+                                samp.chet.tierOne$ClinVar.Pathogenic.Indel.Count...2. > 0 |
+                                samp.chet.tierOne$Clinvar.Pathogenic.CNV.Count...2. > 0 |
+                                samp.chet.tierOne$ClinVar.Pathogenic.SNV.Splice.Count...2. > 0 |
+                                samp.chet.tierOne$ClinVar.Pathogenic.SNV.Nonsense.Count...2. > 0) 
+                                ),]$Gene.Name)
+samp.2chet.clin <- gsub("'","",samp.chet.tierOne[which((samp.chet.tierOne$Function.1 %in% LoF_var & samp.chet.tierOne$Function.2 %in% LoF_var) & 
+                                (samp.chet.tierOne$ClinGen.HaploinsufficiencyDesc.1 %in% haploinsufficient_or_recessive)),]$Gene.Name)
 samp.clin <- unique(c(as.vector(samp.dnm.clin),as.vector(samp.hom.clin),as.vector(samp.hem.clin),as.vector(samp.1chet.clin),as.vector(samp.2chet.clin)))
 
+#LoF depleted/pLI
 samp.dnm.LoF <- samp.dnm.tierOne[which(samp.dnm.tierOne$Function %in% LoF_var &
                                       ((samp.dnm.tierOne$LoF.FDR.EVS. < .1) |
                                       (samp.dnm.tierOne$LoF.FDR.ExAC. < .1) |
@@ -229,24 +276,36 @@ samp.2chet.LoF <- samp.chet.tierOne[which(samp.chet.tierOne$Function.2 %in% LoF_
 samp.LoF <- gsub("'","",unique(c(as.vector(samp.dnm.LoF),as.vector(samp.hom.LoF),as.vector(samp.hem.LoF),as.vector(samp.1chet.LoF),as.vector(samp.2chet.LoF))))
 
 
-
+#KnownVar HGMD
 ind <- which(!is.na(samp.dnm.tierOne$HGMD.Pmid))
-samp.dnm.KnownVar <- c(as.vector(samp.dnm.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.dnm.tierOne[ind,]$HGMD.Pmid,")",sep=""))),as.vector(samp.dnm.tierOne[which(!is.na(samp.dnm.tierOne$Clinvar.Clinical.Significance) & !grepl("benign",samp.dnm.tierOne$Clinvar.Clinical.Significance,ignore.case=T)),]$Gene.Name))
+samp.dnm.KnownVar <- c(as.vector(samp.dnm.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.dnm.tierOne[ind,]$HGMD.Pmid,")",sep=""))))
 ind <- which(!is.na(samp.hom.tierOne$HGMD.Pmid))
-samp.hom.KnownVar <- c(as.vector(samp.hom.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.hom.tierOne[ind,]$HGMD.Pmid,")",sep=""))),as.vector(samp.hom.tierOne[which(!is.na(samp.hom.tierOne$Clinvar.Clinical.Significance) & !grepl("benign",samp.hom.tierOne$Clinvar.Clinical.Significance,ignore.case=T)),]$Gene.Name))
+samp.hom.KnownVar <- c(as.vector(samp.hom.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.hom.tierOne[ind,]$HGMD.Pmid,")",sep=""))))
 ind <- which(!is.na(samp.hem.tierOne$HGMD.Pmid))
-samp.hem.KnownVar <- c(as.vector(samp.hem.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.hem.tierOne[ind,]$HGMD.Pmid,")",sep=""))),as.vector(samp.hem.tierOne[which(!is.na(samp.hem.tierOne$Clinvar.Clinical.Significance) & !grepl("benign",samp.hem.tierOne$Clinvar.Clinical.Significance,ignore.case=T)),]$Gene.Name))
+samp.hem.KnownVar <- c(as.vector(samp.hem.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.hem.tierOne[ind,]$HGMD.Pmid,")",sep=""))))
 ind <- which(!is.na(samp.chet.tierOne$HGMD.Pmid...1))
-samp.1chet.KnownVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$HGMD.Pmid...1.,")",sep=""))),as.vector(samp.chet.tierOne[which(!is.na(samp.chet.tierOne$Clinvar.Clinical.Significance) & !grepl("benign",samp.chet.tierOne$Clinvar.Clinical.Significance,ignore.case=T)),]$Gene.Name))
+samp.1chet.KnownVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$HGMD.Pmid...1.,")",sep=""))))
 ind <- which(!is.na(samp.chet.tierOne$HGMD.Pmid...2))
-samp.2chet.KnownVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$HGMD.Pmid...2.,")",sep=""))),as.vector(samp.chet.tierOne[which(!is.na(samp.chet.tierOne$Clinvar.Clinical.Significance) & !grepl("benign",samp.chet.tierOne$Clinvar.Clinical.Significance,ignore.case=T)),]$Gene.Name))
-samp.KnownVar <- gsub("'","",unique(c(as.vector(samp.dnm.KnownVar),as.vector(samp.hom.KnownVar),as.vector(samp.hem.KnownVar),as.vector(samp.1chet.KnownVar),as.vector(samp.2chet.KnownVar))))
+samp.2chet.KnownVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$HGMD.Pmid...2.,")",sep=""))))
 
-samp.gcClinical <- unique(gsub("'","",c(as.vector(samp.hzo),as.vector(samp.hze),as.vector(samp.LoF),as.vector(samp.dnm.tierOne[which(!is.na(samp.dnm.tierOne$OMIM.Disease.Name)),]$Gene.Name), as.vector(samp.chet.tierOne[which(!is.na(samp.chet.tierOne$OMIM.Disease.Name...1)),]$Gene.Name),"-")))
+#KnownVar ClinVar
+ind <- grep("Patho",dnm$ClinVar.Clinical.Significance,ignore.case=T)
+samp.dnm.KnownClinVar <- c(as.vector(samp.dnm.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.dnm.tierOne[ind,]$ClinVar.PubmedID,")",sep=""))))
+ind <- grep("Patho",hom$ClinVar.Clinical.Significance,ignore.case=T)
+samp.hom.KnownClinVar <- c(as.vector(samp.hom.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.hom.tierOne[ind,]$ClinVar.PubmedID,")",sep=""))))
+ind <- grep("Patho",hem$ClinVar.Clinical.Significance,ignore.case=T)
+samp.hem.KnownClinVar <- c(as.vector(samp.hem.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.hem.tierOne[ind,]$ClinVar.PubmedID,")",sep=""))))
+ind <- grep("Patho",chet$ClinVar.Clinical.Significance...1.,ignore.case=T)
+samp.1chet.KnownClinVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$ClinVar.PubmedID...1.,")",sep=""))))
+ind <- grep("Patho",chet$ClinVar.Clinical.Significance...2.,ignore.case=T)
+samp.2chet.KnownClinVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$ClinVar.PubmedID...2.,")",sep=""))))
+samp.KnownVar <- gsub("'","",unique(c(as.vector(samp.dnm.KnownVar),as.vector(samp.hom.KnownVar),as.vector(samp.hem.KnownVar),as.vector(samp.1chet.KnownVar),as.vector(samp.2chet.KnownVar),as.vector(samp.dnm.KnownClinVar),as.vector(samp.hom.KnownClinVar),as.vector(samp.hem.KnownClinVar),as.vector(samp.1chet.KnownClinVar),as.vector(samp.2chet.KnownClinVar))))
+
+samp.gcClinical <- unique(gsub("'","",c(as.vector(samp.hzo),as.vector(samp.hze),as.vector(samp.LoF),as.vector(samp.dnm.tierOne[which(!is.na(samp.dnm.tierOne$OMIM.Disease.Name)),]$Gene.Name),as.vector(samp.chet.tierOne[which(!is.na(samp.chet.tierOne$OMIM.Disease.Name...1)),]$Gene.Name),"-")))
 
 sum <- rbind(sum,c(samp,Ndnm,Nhem,Nhom,Nchet,"",paste(samp.hze,collapse="\n"),paste(samp.hzo,collapse="\n"),paste(samp.clin,collapse="\n"),paste(samp.LoF,collapse="\n"),gsub("^\n*([^)]*\\)?)\n*$","\\1",paste(samp.KnownVar,collapse="\n")),"","",gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinical,sep=": ",collapse=": \n"))))))
 if(samp=="sqc0438f140"){browser()}
-}}
+}
 
 #Write Excel file
 
