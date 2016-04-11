@@ -33,7 +33,7 @@ Filter.for.compound.heterozygote <- function(data) {
                "Minor Hom Ctrl (#2)","Evs All Genotype Count (#2)","ExAC global gts (#2)",
                "Evs Filter Status (#2)","ExAC global gts (#2)" 
               )
-  browser()
+  
   #make sure all columns are present
   stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
   
@@ -169,9 +169,9 @@ Filter.for.compound.heterozygote <- function(data) {
           not.done <- (genotype.count[3] == "0") & (length(grep("^0",genotype.count[4])) >0)
         }
       }
-    }
-    if (not.done) { #the last condition has been checnke
-      Index[i] <- TRUE
+      if (not.done) { #the last condition has been checnke
+        Index[i] <- TRUE
+      }
     }
   }
   data <- data[Index,]
@@ -222,9 +222,10 @@ Filter.for.compound.heterozygote <- function(data) {
           not.done <- (genotype.count[3] == "0") & (length(grep("^0",genotype.count[4])) >0)
         }
       }
-    }
-    if (not.done) { #the last condition has been checnke
-      Index[i] <- TRUE
+      #browser("chet")
+      if (not.done) { #the last condition has been checnke
+           Index[i] <- TRUE
+      }
     }
   }
   data <- data[Index,]
@@ -350,9 +351,10 @@ Filter.for.homozygous <- function(data) {
           not.done <- (genotype.count[3] == "0") & (length(grep("^0",genotype.count[4])) >0)
         }
       }
-    }
-    if (not.done) { #the last condition has been checnke
-      Index[i] <- TRUE
+    #browser("hom")
+        if (not.done) { #the last condition has been checnke
+            Index[i] <- TRUE
+        }
     }
   }
   data <- data[Index,]
@@ -477,9 +479,10 @@ Filter.for.hemizygous <- function(data) {
           not.done <- (genotype.count[3] == "0") & (length(grep("^0",genotype.count[4])) >0)
         }
       }
-    }
-    if (not.done) { #the last condition has been checnke
-      Index[i] <- TRUE
+    #browser("hemi")
+        if (not.done) { #the last condition has been checnke
+            Index[i] <- TRUE
+        }
     }
   }
   data <- data[Index,]
@@ -512,7 +515,7 @@ Filter.for.denovo <- function(data) {
   
   #step 1: 
   data   <- data[is.na(data[normalized.name("Percent Read Alt (child)")])
-                 | data[normalized.name("Percent Read Alt (child)")] > 0.2499,]
+                 | data[normalized.name("Percent Read Alt (child)")] > 0.1999,]
   if (dim(data)[1] ==0) { return(data)}
   
   #step 2: 
