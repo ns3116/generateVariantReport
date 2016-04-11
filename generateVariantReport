@@ -47,7 +47,6 @@ scriptPath <- getScriptPath()
 option_list = list(
     make_option(c("-c","--cmphet"), type="character", default="CHET/CHET_comphet.csv", help="Compound Heterozygous ATAV output file [default = CHET/CHET_comphet.csv]"),
     make_option(c("-d","--dnm"), type="character", default="DNM/DNM_denovoandhom.csv", help="Denovo Mutation ATAV output file [default = DNM/DNM_denovoandhom.csv]"),
-    make_option(c("-a","--anno"), type="character", default="all_var_anno/all_var_anno_annotations.csv",help="Additional variant annotations from ATAV [default = all_var_anno/all_var_anno_annotations.csv]"),
     make_option(c("-o","--out"), type="character", default="variant_report.xlsx", help="Report output file [default  = variant_report.xlsx]"),
     make_option(c("-m","--mgi"), type="character", default=paste(scriptPath,"/MGI_essential.txt",sep=""), help="MGI essiential gene list [default  = <Script Path>/MGI_essential.txt]", dest="MGIe"),
     make_option(c("-n","--nontrio"), type="logical", default=F, action="store_true", help="Flag to process files as a non-trio, imposing additional filters to the tier one rules [default  = False]")
@@ -61,40 +60,10 @@ opt = parse_args(opt_parser);
 #read csv file as dataframe for dnm, chet, and add_anno, and MGI essential gene list
 source(paste(scriptPath,"/tier1_filters.R",sep=""))
 
-add.anno = read.csv(opt$anno,na.strings="NA")
-add.anno.brief <- add.anno[,c("Variant.ID",
-                           "IGM.Roche.Avg.GeneCov",
-                           "X0.1.RVIS.EVS.",
-                           "X0.1.RVIS..EVS.",
-                           "EdgeCase.EVS.",
-                           "OEratio.tile.EVS.",
-                           "GenicConstraint.EVS.",
-                           "X1.0.ncRVIS.IGM.",
-                           "X1.0.ncRVIS.tile.IGM.",
-                           "ncGERP",
-                           "ncGERP.tile",
-                           "pcGERP",
-                           "pcGERP.tile",
-                           "X0.05._anypopn_RVIS.ExAC.",
-                           "X0.05._anypopn_RVIS.tile.ExAC.",
-                           "OEratio.tile.ExAC.",
-                           "GenicConstraint_mis.z.ExAC.",
-                           "GenicConstraint_mis.z.tile.ExAC.",
-                           "LoF.FDR.EVS.",
-                           "LoF.FDR.ExAC.",
-                           "LoF.pLI.ExAC.",
-                           "LoF.pRec.ExAC.",
-                           "LoF.pNull.ExAC.",
-                           "subRVIS.Domain.Name",
-                           "subRVIS.Domain.Score",
-                           "subRVIS.Exon.Name",
-                           "subRVIS.Exon.Score")
-                           ]
 MGIe <- read.table(opt$MGIe,header=T)
 
 #Tier 1 filtering DNM and merging additional annotations to table
-dnm.output = read.csv(opt$dnm,na.strings="NA")
-dnm.data <- merge(dnm.output,add.anno.brief)
+dnm.data = read.csv(opt$dnm,na.strings="NA")
 dnm.data <- cbind(dnm.data, gsub("'","",dnm.data$Gene.Name) %in% MGIe$Gene_symbol)
 colnames(dnm.data)[dim(dnm.data)[2]] <- "MGI.Essential"
 
@@ -131,8 +100,7 @@ write.csv(hom, file = "homozygous.csv")
 if(opt$nontrio){chet<-dnm.data[which(dnm.data$Genotype == "empty"),]
 }else{
 #Tier 1 filtering CHET and merging additional annotations to table for both variants
-chet.output = read.csv(opt$cmphet,na.strings="NA") 
-chet.data <- merge(merge(chet.output, add.anno.brief, by.x="Variant.ID...1.",by.y="Variant.ID",sort=F), add.anno.brief, by.x="Variant.ID...2.", by.y="Variant.ID", suffixes=c(".1",".2"))
+chet.data = read.csv(opt$cmphet,na.strings="NA") 
 chet.data <- cbind(chet.data, gsub("'","",chet.data$Gene.Name) %in% MGIe$Gene_symbol)
 colnames(chet.data)[dim(chet.data)[2]] <- "MGI.Essential"
 
@@ -141,10 +109,12 @@ chet <- Filter.for.compound.heterozygote(data)
 
 #setwd('H:/2008 USB/Postdoc/SequencingClinic_Neuro/DNM_neuro_20151211_sample_trios')
 data <- Filter.by.Flag(chet.data,'possibly compound heterozygote', strict = TRUE)  
-chet <- rbind(chet,Filter.for.compound.heterozygote(data))
+pchet <- Filter.for.compound.heterozygote(data)
 colnames(chet) <- gsub("\\.\\.\\.([12]).",".\\1",colnames(chet))
+colnames(pchet) <- gsub("\\.\\.\\.([12]).",".\\1",colnames(pchet))
 write.csv(chet, file = "compound.heterozygote.csv")
 write.csv(chet, file = "possible.compound.heterozygote.csv")
+chet <- rbind(chet,pchet)
 }
 #Check if non-trio and additional filtering if true
 
@@ -154,10 +124,10 @@ dnm.sheet <- createSheet(outwb, sheetName = "DNM")
 hem.sheet <- createSheet(outwb, sheetName = "HEM")
 hom.sheet <- createSheet(outwb, sheetName = "HOM")
 chet.sheet <- createSheet(outwb, sheetName = "CHET")
-addDataFrame(dnm, dnm.sheet, row.names=F, showNA=T)
-addDataFrame(hem, hem.sheet, row.names=F, showNA=T)
-addDataFrame(hom, hom.sheet, row.names=F, showNA=T)
-addDataFrame(chet, chet.sheet, row.names=F, showNA=T)
+addDataFrame(dnm, dnm.sheet, row.names=F, showNA=F)
+addDataFrame(hem, hem.sheet, row.names=F, showNA=F)
+addDataFrame(hom, hom.sheet, row.names=F, showNA=F)
+addDataFrame(chet, chet.sheet, row.names=F, showNA=F)
 
 #LoFd <- read.table(opt$LoFd,header=T)
 sum = NULL
@@ -169,7 +139,7 @@ LoF_var <- c(
     "FRAME_SHIFT",
     "EXON_DELETED"
 )
-browser()
+
 for(samp in unique(c(as.vector(dnm$Child),as.vector(hem$Child),as.vector(hom$Child),as.vector(chet$Child)))){
 if(grepl("*sqc*",samp,ignore.case=T)){    
 
@@ -279,7 +249,7 @@ if(samp=="sqc0438f140"){browser()}
 }}
 
 #Write Excel file
-browser()
+
 #colnames(sum) <- c("diagseq","DNM","HEM","HOM","CHET","Ethn","HZ[E]","HZ[OMIM]","ClinGen/Var[LoF]","LoF depleted/pLI","KnownVar(PMID)","Candidate Genetic Diagnosis","Pheno","GC Clinical Fit(H/M/L)")
 sum <- rbind(c("diagseq","DNM","HEM","HOM","CHET","Ethn","HZ [E]","HZ [OMIM]","ClinGen / Var [LoF]","LoF depleted / pLI","KnownVar (PMID)","Candidate Genetic Diagnosis","Pheno","GC Clinical Fit (H/M/L)"),sum)
 
