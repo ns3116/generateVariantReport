@@ -40,7 +40,8 @@ nonTrioToTrio <- function(data){
 }
 
 ##################################################################################################################
-scriptPath <- getScriptPath()
+#scriptPath <- getScriptPath()
+scriptPath <- "~/bin"
 
 #Opt parse
 option_list = list(
@@ -70,8 +71,7 @@ if(opt$nontrio){
     dnm <- dnm.data[which(dnm.data$Genotype == "het"),]
     dnm <- nonTrioToTrio(dnm)
     pdnm <- dnm[which(dnm$Gene.Name %in% names(table(dnm$Gene.Name)[which(table(dnm$Gene.Name) == 1)])),]
-    pchet <- dnm[which(dnm$Gene.Name %in% names(table(dnm$Gene.Name)[which(table(dnm$Gene.Name) > 1)])),]
-    browser()
+    pchet <- dnm[which(dnm$Gene.Name %in% names(table(dnm$Gene.Name)[which(table(dnm$Gene.Name) > 1)])),] 
 }else{
     data <- Filter.by.Flag(dnm.data,'de novo', strict = TRUE)
     dnm <- Filter.for.denovo(data)
@@ -117,7 +117,6 @@ write.csv(chet, file = "compound.heterozygote.csv")
 write.csv(chet, file = "possible.compound.heterozygote.csv")
 chet <- rbind(chet,pchet)
 }
-#Check if non-trio and additional filtering if true
 
 outwb <- createWorkbook()
 sum.sheet <- createSheet(outwb, sheetName = "Summary")
@@ -289,15 +288,15 @@ ind <- which(!is.na(samp.chet.tierOne$HGMD.Pmid...2))
 samp.2chet.KnownVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$HGMD.Pmid...2.,")",sep=""))))
 
 #KnownVar ClinVar
-ind <- grep("Patho",dnm$ClinVar.Clinical.Significance,ignore.case=T)
+ind <- grep("Patho",samp.dnm.tierOne$ClinVar.Clinical.Significance,ignore.case=T)
 samp.dnm.KnownClinVar <- c(as.vector(samp.dnm.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.dnm.tierOne[ind,]$ClinVar.PubmedID,")",sep=""))))
-ind <- grep("Patho",hom$ClinVar.Clinical.Significance,ignore.case=T)
+ind <- grep("Patho",samp.hom.tierOne$ClinVar.Clinical.Significance,ignore.case=T)
 samp.hom.KnownClinVar <- c(as.vector(samp.hom.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.hom.tierOne[ind,]$ClinVar.PubmedID,")",sep=""))))
-ind <- grep("Patho",hem$ClinVar.Clinical.Significance,ignore.case=T)
+ind <- grep("Patho",samp.hem.tierOne$ClinVar.Clinical.Significance,ignore.case=T)
 samp.hem.KnownClinVar <- c(as.vector(samp.hem.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.hem.tierOne[ind,]$ClinVar.PubmedID,")",sep=""))))
-ind <- grep("Patho",chet$ClinVar.Clinical.Significance...1.,ignore.case=T)
+ind <- grep("Patho",samp.chet.tierOne$ClinVar.Clinical.Significance...1.,ignore.case=T)
 samp.1chet.KnownClinVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$ClinVar.PubmedID...1.,")",sep=""))))
-ind <- grep("Patho",chet$ClinVar.Clinical.Significance...2.,ignore.case=T)
+ind <- grep("Patho",samp.chet.tierOne$ClinVar.Clinical.Significance...2.,ignore.case=T)
 samp.2chet.KnownClinVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$ClinVar.PubmedID...2.,")",sep=""))))
 samp.KnownVar <- gsub("'","",unique(c(as.vector(samp.dnm.KnownVar),as.vector(samp.hom.KnownVar),as.vector(samp.hem.KnownVar),as.vector(samp.1chet.KnownVar),as.vector(samp.2chet.KnownVar),as.vector(samp.dnm.KnownClinVar),as.vector(samp.hom.KnownClinVar),as.vector(samp.hem.KnownClinVar),as.vector(samp.1chet.KnownClinVar),as.vector(samp.2chet.KnownClinVar))))
 
