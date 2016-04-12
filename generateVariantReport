@@ -36,12 +36,12 @@ nonTrioToTrio <- function(data){
                        is.na(data$subRVIS.Domain.Score)) &
                        (data$Polyphen.Humvar.Score >= .95 |
                        is.na(data$Polyphen.Humvar.Score))),]
+    data <- data[which(!(data$Function %in% c("SYNONYMOUS_CODING","SYNONYMOUS_STOP","INTRON_EXON_BOUNDARY"))),]
     return(data)
 }
 
 ##################################################################################################################
-#scriptPath <- getScriptPath()
-scriptPath <- "~/bin"
+scriptPath <- getScriptPath()
 
 #Opt parse
 option_list = list(
@@ -70,8 +70,8 @@ colnames(dnm.data)[dim(dnm.data)[2]] <- "MGI.Essential"
 if(opt$nontrio){
     dnm <- dnm.data[which(dnm.data$Genotype == "het"),]
     dnm <- nonTrioToTrio(dnm)
-    pdnm <- dnm[which(dnm$Gene.Name %in% names(table(dnm$Gene.Name)[which(table(dnm$Gene.Name) == 1)])),]
-    pchet <- dnm[which(dnm$Gene.Name %in% names(table(dnm$Gene.Name)[which(table(dnm$Gene.Name) > 1)])),] 
+    pdnm <- dnm[which(do.call(paste,c(dnm[c("Child","Gene.Name")],sep="")) %in% names(table(do.call(paste,c(dnm[c("Child","Gene.Name")],sep="")))[which(table(do.call(paste,c(dnm[c("Child","Gene.Name")],sep=""))) == 1)])),]
+    pchet <- dnm[which(do.call(paste,c(dnm[c("Child","Gene.Name")],sep="")) %in% names(table(do.call(paste,c(dnm[c("Child","Gene.Name")],sep="")))[which(table(do.call(paste,c(dnm[c("Child","Gene.Name")],sep=""))) > 1)])),]
 }else{
     data <- Filter.by.Flag(dnm.data,'de novo', strict = TRUE)
     dnm <- Filter.for.denovo(data)
@@ -110,12 +110,12 @@ chet <- Filter.for.compound.heterozygote(data)
 
 #setwd('H:/2008 USB/Postdoc/SequencingClinic_Neuro/DNM_neuro_20151211_sample_trios')
 data <- Filter.by.Flag(chet.data,'possibly compound heterozygote', strict = TRUE)  
-pchet <- Filter.for.compound.heterozygote(data)
+poschet <- Filter.for.compound.heterozygote(data)
 colnames(chet) <- gsub("\\.\\.\\.([12]).",".\\1",colnames(chet))
-colnames(pchet) <- gsub("\\.\\.\\.([12]).",".\\1",colnames(pchet))
+colnames(poschet) <- gsub("\\.\\.\\.([12]).",".\\1",colnames(pchet))
 write.csv(chet, file = "compound.heterozygote.csv")
 write.csv(chet, file = "possible.compound.heterozygote.csv")
-chet <- rbind(chet,pchet)
+chet <- rbind(chet,poschet)
 }
 
 outwb <- createWorkbook()
@@ -300,16 +300,19 @@ ind <- grep("Patho",samp.chet.tierOne$ClinVar.Clinical.Significance...2.,ignore.
 samp.2chet.KnownClinVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$ClinVar.PubmedID...2.,")",sep=""))))
 samp.KnownVar <- gsub("'","",unique(c(as.vector(samp.dnm.KnownVar),as.vector(samp.hom.KnownVar),as.vector(samp.hem.KnownVar),as.vector(samp.1chet.KnownVar),as.vector(samp.2chet.KnownVar),as.vector(samp.dnm.KnownClinVar),as.vector(samp.hom.KnownClinVar),as.vector(samp.hem.KnownClinVar),as.vector(samp.1chet.KnownClinVar),as.vector(samp.2chet.KnownClinVar))))
 
-samp.gcClinical <- unique(gsub("'","",c(as.vector(samp.hzo),as.vector(samp.hze),as.vector(samp.LoF),as.vector(samp.dnm.tierOne[which(!is.na(samp.dnm.tierOne$OMIM.Disease.Name)),]$Gene.Name),as.vector(samp.chet.tierOne[which(!is.na(samp.chet.tierOne$OMIM.Disease.Name...1)),]$Gene.Name),"-")))
+samp.gcClinicalOMIM <- unique(gsub("'","",as.vector(samp.dnm.tierOne[which(!is.na(samp.dnm.tierOne$OMIM.Disease.Name)),]$Gene.Name),as.vector(samp.chet.tierOne[which(!is.na(samp.chet.tierOne$OMIM.Disease.Name...1)),]$Gene.Name),"-"))
 
-sum <- rbind(sum,c(samp,Ndnm,Nhem,Nhom,Nchet,"",paste(samp.hze,collapse="\n"),paste(samp.hzo,collapse="\n"),paste(samp.clin,collapse="\n"),paste(samp.LoF,collapse="\n"),gsub("^\n*([^)]*\\)?)\n*$","\\1",paste(samp.KnownVar,collapse="\n")),"","",gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinical,sep=": ",collapse=": \n"))))))
+samp.gcClinicalnonOMIM <- unique(gsub("'","",c(as.vector(samp.hzo),as.vector(samp.hze),as.vector(samp.LoF)),"-"))
+samp.gcClinicalnonOMIM <- samp.gcClinicalnonOMIM[!samp.gcClinicalnonOMIM %in% samp.gcClinicalOMIM]
+
+sum <- rbind(sum,c(samp,Ndnm,Nhem,Nhom,Nchet,"",paste(samp.hze,collapse="\n"),paste(samp.hzo,collapse="\n"),paste(samp.clin,collapse="\n"),paste(samp.LoF,collapse="\n"),gsub("^\n*([^)]*\\)?)\n*$","\\1",paste(samp.KnownVar,collapse="\n")),"","",gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalOMIM,sep=": ",collapse=": \n")))),gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalnonOMIM,sep=": ",collapse=": \n"))))))
 if(samp=="sqc0438f140"){browser()}
 }
 
 #Write Excel file
 
 #colnames(sum) <- c("diagseq","DNM","HEM","HOM","CHET","Ethn","HZ[E]","HZ[OMIM]","ClinGen/Var[LoF]","LoF depleted/pLI","KnownVar(PMID)","Candidate Genetic Diagnosis","Pheno","GC Clinical Fit(H/M/L)")
-sum <- rbind(c("diagseq","DNM","HEM","HOM","CHET","Ethn","HZ [E]","HZ [OMIM]","ClinGen / Var [LoF]","LoF depleted / pLI","KnownVar (PMID)","Candidate Genetic Diagnosis","Pheno","GC Clinical Fit (H/M/L)"),sum)
+sum <- rbind(c("diagseq","DNM","HEM","HOM","CHET","Ethn","HZ [E]","HZ [OMIM]","ClinGen / Var [LoF]","LoF depleted / pLI","KnownVar (PMID)","Candidate Genetic Diagnosis","Pheno","OMIM GC Clinical Fit (H/M/L)","non-OMIM GC Clinical Fit (H/M/L)"),sum)
 
 cellBlock <- CellBlock(sum.sheet,1,1,dim(sum)[1],dim(sum)[2])
 colnames_style <- CellStyle(outwb) + Font(outwb,isBold=T) + Alignment(horizontal="ALIGN_CENTER",vertical="VERTICAL_CENTER")
@@ -318,7 +321,7 @@ csCenter <- CellStyle(outwb) + Alignment(horizontal="ALIGN_CENTER",vertical="VER
 colList <- rep(list(csWrap),dim(sum)[2])
 names(colList) <- seq(1,dim(sum)[2])
 
-colList[14] <- list(csWrap )
+colList[dim(sum)[2]] <- list(csWrap )
 addDataFrame(sum, sum.sheet, col.names=F, row.names=F,colnamesStyle = colnames_style,colStyle=colList)
 border <- Border(color="black", position=c("TOP","BOTTOM","LEFT","RIGHT"),pen=c("BORDER_THIN","BORDER_THIN","BORDER_THIN","BORDER_THIN"))
 CB.setBorder(cellBlock,border,sort(c(rep(1:(dim(sum)[1]),dim(sum)[2]))),c(rep(1:dim(sum)[2],(dim(sum)[1]))))
@@ -326,7 +329,7 @@ colname_border <- Border(color="black",position="BOTTOM",pen="BORDER_THICK")
 CB.setBorder(cellBlock,colname_border,1,1:dim(sum)[2])
 
 setRowHeight(getRows(sum.sheet,1),1,multiplier=3)
-for(col in c(1,13,14)){
+for(col in c(1,13,14,15)){
     setColumnWidth(sum.sheet,col,14)
 }
 for(col in c(7:12)){
@@ -343,7 +346,7 @@ for(col in c(7:11)){
 ind <- which(sum[,8] != "")
 CB.setFill(cellBlock, redFill, ind, 8)
 grayFill <- Fill(foregroundColor = "gray")
-CB.setFill(cellBlock, grayFill, 1,6:14)
+CB.setFill(cellBlock, grayFill, 1,6:dim(sum)[2])
 
 excelColumn<- function(num){
     name <- "" 
