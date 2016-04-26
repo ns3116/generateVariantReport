@@ -41,7 +41,8 @@ nonTrioToTrio <- function(data){
 }
 
 ##################################################################################################################
-scriptPath <- getScriptPath()
+#scriptPath <- getScriptPath()
+scriptPath <- "~/bin"
 
 #Opt parse
 option_list = list(
@@ -56,15 +57,23 @@ option_list = list(
 opt_parser = OptionParser(option_list=option_list)
 opt = parse_args(opt_parser)
 
+
 #read csv file as dataframe for dnm, chet, and add_anno, and MGI essential gene list
-source(paste(scriptPath,"/tier1_filters.R",sep=""))
+source(paste(scriptPath,"/trio_filters.R",sep=""))
 
 MGIe <- read.table(opt$MGIe,header=T)
 
-#Tier 1 filtering DNM and merging additional annotations to table
+#Tier 1 filtering DNM 
+#Merging additional annotations to table
 dnm.data = read.csv(opt$dnm,na.strings="NA")
 dnm.data <- cbind(dnm.data, gsub("'","",dnm.data$Gene.Name) %in% MGIe$Gene_symbol)
 colnames(dnm.data)[dim(dnm.data)[2]] <- "MGI.Essential"
+col.id <- grep("Gene.Name",colnames(dnm.data))
+new.pos <- 3
+dnm.data <- dnm.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(dnm.data))[-(col.id-new.pos+1)])]
+col.id <- grep("Function",colnames(dnm.data))
+new.pos <- 4
+dnm.data <- dnm.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(dnm.data))[-(col.id-new.pos+1)])]
 
 #de novo
 if(opt$nontrio){
@@ -75,6 +84,8 @@ if(opt$nontrio){
 }else{
     data <- Filter.by.Flag(dnm.data,'de novo', strict = TRUE)
     dnm <- Filter.for.denovo(data)
+    data <- Filter.by.Allele.Count(data,19)
+    tier2 <- Filter.for.tier2(data)
 }
 write.csv(dnm, file = "denovo.csv")
 
@@ -85,6 +96,8 @@ if(opt$nontrio){
 }else{
     data <- Filter.by.Flag(dnm.data,'newly hemizygous', strict = TRUE) 
     hem <- Filter.for.hemizygous(data)
+    data <- Filter.by.HemiHomo.Count(data,9)
+    tier2 <- rbind(tier2,Filter.for.tier2(data))
 }
 write.csv(hem, file = "hemizygous.csv")
 
@@ -95,20 +108,32 @@ if(opt$nontrio){
 }else{
     data <- Filter.by.Flag(dnm.data,'newly homozygous', strict = TRUE)  
     hom <- Filter.for.homozygous(data)
+    data <- Filter.by.HemiHomo.Count(data,9)
+    tier2 <- rbind(tier2,Filter.for.tier2(data))
 }
 write.csv(hom, file = "homozygous.csv")
 
 if(opt$nontrio){chet<-dnm.data[which(dnm.data$Genotype == "empty"),]
 }else{
-#Tier 1 filtering CHET and merging additional annotations to table for both variants
+#Filtering CHET and merging additional annotations to table for both variants
 chet.data = read.csv(opt$cmphet,na.strings="NA") 
 chet.data <- cbind(chet.data, gsub("'","",chet.data$Gene.Name) %in% MGIe$Gene_symbol)
 colnames(chet.data)[dim(chet.data)[2]] <- "MGI.Essential"
+col.id <- grep("Gene.Name",colnames(chet.data))
+new.pos <- 3
+chet.data <- chet.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(chet.data))[-(col.id-new.pos+1)])]
+col.id <- grep("Function...1.",colnames(chet.data))
+new.pos <- 4
+chet.data <- chet.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(chet.data))[-(col.id-new.pos+1)])]
+col.id <- grep("Function...2.",colnames(chet.data))
+new.pos <- 4
+chet.data <- chet.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(chet.data))[-(col.id-new.pos+1)])]
 
 data <- Filter.by.Flag(chet.data,'compound heterozygote', strict = TRUE)  
 chet <- Filter.for.compound.heterozygote(data)
+data <- Filter.by.HemiHomo.Count(data,9,T)
+tier2.chet <- Filter.for.tier2(data,T)
 
-#setwd('H:/2008 USB/Postdoc/SequencingClinic_Neuro/DNM_neuro_20151211_sample_trios')
 data <- Filter.by.Flag(chet.data,'possibly compound heterozygote', strict = TRUE)  
 poschet <- Filter.for.compound.heterozygote(data)
 colnames(chet) <- gsub("\\.\\.\\.([12]).",".\\1",colnames(chet))
@@ -116,8 +141,11 @@ colnames(poschet) <- gsub("\\.\\.\\.([12]).",".\\1",colnames(poschet))
 write.csv(chet, file = "compound.heterozygote.csv")
 write.csv(poschet, file = "possible.compound.heterozygote.csv")
 chet <- rbind(chet,poschet)
+data <- Filter.by.HemiHomo.Count(data,9,T)
+tier2.chet <- rbind(tier2.chet,Filter.for.tier2(data,T))
 }
 
+#Create workbook and sheets
 outwb <- createWorkbook()
 sum.sheet <- createSheet(outwb, sheetName = "Summary")
 if(!opt$nontrio){
@@ -125,10 +153,14 @@ if(!opt$nontrio){
     hem.sheet <- createSheet(outwb, sheetName = "HEM")
     hom.sheet <- createSheet(outwb, sheetName = "HOM")
     chet.sheet <- createSheet(outwb, sheetName = "CHET")
+    tier2.sheet <- createSheet(outwb, sheetName = "Tier 2")
+    tier2.chet.sheet <- createSheet(outwb, sheetName = "Tier 2(CHET)")
     addDataFrame(dnm, dnm.sheet, row.names=F, showNA=F)
     addDataFrame(hem, hem.sheet, row.names=F, showNA=F)
     addDataFrame(hom, hom.sheet, row.names=F, showNA=F)
     addDataFrame(chet, chet.sheet, row.names=F, showNA=F)
+    addDataFrame(tier2, tier2.sheet, row.names=F, showNA=F)
+    addDataFrame(tier2.chet, tier2.chet.sheet, row.names=F, showNA=F)
 }else{
     dnm.sheet <- createSheet(outwb, sheetName = "pDNM")
     hem.sheet <- createSheet(outwb, sheetName = "pHEM")
@@ -152,6 +184,7 @@ LoF_var <- c(
     "EXON_DELETED"
 )
 
+#Create Summary Table
 for(samp in unique(c(as.vector(dnm$Child),as.vector(hem$Child),as.vector(hom$Child),as.vector(chet$Child)))){
 
 Ndnm <- length(which(dnm$Child==samp))
@@ -239,38 +272,33 @@ samp.clin <- unique(c(as.vector(samp.dnm.clin),as.vector(samp.hom.clin),as.vecto
 
 #LoF depleted/pLI
 samp.dnm.LoF <- samp.dnm.tierOne[which(samp.dnm.tierOne$Function %in% LoF_var &
-                                      ((samp.dnm.tierOne$LoF.FDR.EVS. < .1) |
-                                      (samp.dnm.tierOne$LoF.FDR.ExAC. < .1) |
-                                      (samp.dnm.tierOne$LoF.pLI.ExAC. > .9) |
-                                      (samp.dnm.tierOne$LoF.pRec.ExAC. > .9))),
+                                      ((samp.dnm.tierOne$LoF.FDR.EVS. < .01) |
+                                      (samp.dnm.tierOne$LoF.FDR.ExAC. < .01) |
+                                      (samp.dnm.tierOne$LoF.pLI.ExAC. > .9))),
                                       ]$Gene.Name
 samp.hom.LoF <- samp.hom.tierOne[which(samp.hom.tierOne$Function %in% LoF_var &
-                                      ((samp.hom.tierOne$LoF.FDR.EVS. < .1) |
-                                      (samp.hom.tierOne$LoF.FDR.ExAC. < .1) |
+                                      ((samp.hom.tierOne$LoF.FDR.EVS. < .01) |
+                                      (samp.hom.tierOne$LoF.FDR.ExAC. < .01) |
                                       (samp.hom.tierOne$LoF.pLI.ExAC. > .9) |
-                                      (samp.hom.tierOne$LoF.pRec.ExAC. > .9) |
-                                      (samp.hom.tierOne$LoF.pNull.ExAC. > .9))),
+                                      (samp.hom.tierOne$LoF.pRec.ExAC. > .9))),
                                       ]$Gene.Name
 samp.hem.LoF <- samp.hem.tierOne[which(samp.hem.tierOne$Function %in% LoF_var &
-                                      ((samp.hem.tierOne$LoF.FDR.EVS. < .1) |
-                                      (samp.hem.tierOne$LoF.FDR.ExAC. < .1) |
+                                      ((samp.hem.tierOne$LoF.FDR.EVS. < .01) |
+                                      (samp.hem.tierOne$LoF.FDR.ExAC. < .01) |
                                       (samp.hem.tierOne$LoF.pLI.ExAC. > .9) |
-                                      (samp.hem.tierOne$LoF.pRec.ExAC. > .9) |
-                                      (samp.hom.tierOne$LoF.pNull.ExAC. > .9))),
+                                      (samp.hem.tierOne$LoF.pRec.ExAC. > .9))),
                                       ]$Gene.Name
 samp.1chet.LoF <- samp.chet.tierOne[which(samp.chet.tierOne$Function.1 %in% LoF_var &
-                                      ((samp.chet.tierOne$LoF.FDR.EVS..1 < .1) |
-                                      (samp.chet.tierOne$LoF.FDR.ExAC..1 < .1) |
+                                      ((samp.chet.tierOne$LoF.FDR.EVS..1 < .01) |
+                                      (samp.chet.tierOne$LoF.FDR.ExAC..1 < .01) |
                                       (samp.chet.tierOne$LoF.pLI.ExAC..1 > .9) |
                                       (samp.chet.tierOne$LoF.pRec.ExAC..1 > .9))), 
                                       ]$Gene.Name
 samp.2chet.LoF <- samp.chet.tierOne[which(samp.chet.tierOne$Function.2 %in% LoF_var &
-                                      ((samp.chet.tierOne$LoF.FDR.EVS..2 < .1) |
-                                      (samp.chet.tierOne$LoF.FDR.ExAC..2 < .1) |
-                                      (samp.chet.tierOne$LoF.pLI.ExAC..2 < .1) |
-                                      (samp.chet.tierOne$LoF.pRec.ExAC..2 < .1) |
-                                      (samp.hom.tierOne$LoF.pNull.ExAC..2 > .9  &
-                                       samp.hom.tierOne$LoF.pNull.ExAC..1 > .9))),
+                                      ((samp.chet.tierOne$LoF.FDR.EVS..2 < .01) |
+                                      (samp.chet.tierOne$LoF.FDR.ExAC..2 < .01) |
+                                      (samp.chet.tierOne$LoF.pLI.ExAC..2 > .9) |
+                                      (samp.chet.tierOne$LoF.pRec.ExAC..2 > .9))),
                                       ]$Gene.Name
 samp.LoF <- gsub("'","",unique(c(as.vector(samp.dnm.LoF),as.vector(samp.hom.LoF),as.vector(samp.hem.LoF),as.vector(samp.1chet.LoF),as.vector(samp.2chet.LoF))))
 
@@ -283,9 +311,9 @@ samp.hom.KnownVar <- c(as.vector(samp.hom.tierOne[ind,]$Gene.Name),as.vector(gsu
 ind <- which(!is.na(samp.hem.tierOne$HGMD.Pmid))
 samp.hem.KnownVar <- c(as.vector(samp.hem.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.hem.tierOne[ind,]$HGMD.Pmid,")",sep=""))))
 ind <- which(!is.na(samp.chet.tierOne$HGMD.Pmid.1))
-samp.1chet.KnownVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$HGMD.Pmid.1.,")",sep=""))))
+samp.1chet.KnownVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$HGMD.Pmid.1,")",sep=""))))
 ind <- which(!is.na(samp.chet.tierOne$HGMD.Pmid.2))
-samp.2chet.KnownVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$HGMD.Pmid.2.,")",sep=""))))
+samp.2chet.KnownVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$HGMD.Pmid.2,")",sep=""))))
 
 #KnownVar ClinVar
 ind <- grep("Patho",samp.dnm.tierOne$ClinVar.Clinical.Significance,ignore.case=T)
@@ -294,19 +322,20 @@ ind <- grep("Patho",samp.hom.tierOne$ClinVar.Clinical.Significance,ignore.case=T
 samp.hom.KnownClinVar <- c(as.vector(samp.hom.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.hom.tierOne[ind,]$ClinVar.PubmedID,")",sep=""))))
 ind <- grep("Patho",samp.hem.tierOne$ClinVar.Clinical.Significance,ignore.case=T)
 samp.hem.KnownClinVar <- c(as.vector(samp.hem.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.hem.tierOne[ind,]$ClinVar.PubmedID,")",sep=""))))
-ind <- grep("Patho",samp.chet.tierOne$ClinVar.Clinical.Significance.1.,ignore.case=T)
-samp.1chet.KnownClinVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$ClinVar.PubmedID.1.,")",sep=""))))
-ind <- grep("Patho",samp.chet.tierOne$ClinVar.Clinical.Significance.2.,ignore.case=T)
-samp.2chet.KnownClinVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$ClinVar.PubmedID.2.,")",sep=""))))
+ind <- grep("Patho",samp.chet.tierOne$ClinVar.Clinical.Significance.1,ignore.case=T)
+samp.1chet.KnownClinVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$ClinVar.PubmedID.1,")",sep=""))))
+ind <- grep("Patho",samp.chet.tierOne$ClinVar.Clinical.Significance.2,ignore.case=T)
+samp.2chet.KnownClinVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$ClinVar.PubmedID.2,")",sep=""))))
+
 samp.KnownVar <- gsub("'","",unique(c(as.vector(samp.dnm.KnownVar),as.vector(samp.hom.KnownVar),as.vector(samp.hem.KnownVar),as.vector(samp.1chet.KnownVar),as.vector(samp.2chet.KnownVar),as.vector(samp.dnm.KnownClinVar),as.vector(samp.hom.KnownClinVar),as.vector(samp.hem.KnownClinVar),as.vector(samp.1chet.KnownClinVar),as.vector(samp.2chet.KnownClinVar))))
 
-samp.gcClinicalOMIM <- unique(gsub("'","",as.vector(samp.dnm.tierOne[which(!is.na(samp.dnm.tierOne$OMIM.Disease.Name)),]$Gene.Name),as.vector(samp.chet.tierOne[which(!is.na(samp.chet.tierOne$OMIM.Disease.Name.1)),]$Gene.Name),"-"))
+samp.gcClinicalOMIM <- unique(gsub("'","",as.vector(samp.dnm.tierOne[which(!is.na(samp.dnm.tierOne$OMIM.Disease.Name)),]$Gene.Name),as.vector(samp.hem.tierOne[which(!is.na(samp.hem.tierOne$OMIM.Disease.Name)),]$Gene.Name),as.vector(samp.hom.tierOne[which(!is.na(samp.hom.tierOne$OMIM.Disease.Name)),]$Gene.Name),as.vector(samp.chet.tierOne[which(!is.na(samp.chet.tierOne$OMIM.Disease.Name.1)),]$Gene.Name),"-"))
 
 samp.gcClinicalnonOMIM <- unique(gsub("'","",c(as.vector(samp.hzo),as.vector(samp.hze),as.vector(samp.LoF)),"-"))
 samp.gcClinicalnonOMIM <- samp.gcClinicalnonOMIM[!samp.gcClinicalnonOMIM %in% samp.gcClinicalOMIM]
 
 sum <- rbind(sum,c(samp,Ndnm,Nhem,Nhom,Nchet,"",paste(samp.hze,collapse="\n"),paste(samp.hzo,collapse="\n"),paste(samp.clin,collapse="\n"),paste(samp.LoF,collapse="\n"),gsub("^\n*([^)]*\\)?)\n*$","\\1",paste(samp.KnownVar,collapse="\n")),"","",gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalOMIM,sep=": ",collapse=": \n")))),gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalnonOMIM,sep=": ",collapse=": \n"))))))
-if(samp=="sqc0438f140"){browser()}
+if(samp=="sqc0034f11"){browser()}
 }
 
 #Write Excel file
@@ -358,16 +387,20 @@ excelColumn<- function(num){
     return(name) 
 }
 
-addAutoFilter(sum.sheet,paste("A:",excelColumn(dim(sum)[2]),sep=""))
-addAutoFilter(dnm.sheet,paste("A:",excelColumn(dim(dnm)[2]),sep=""))
-addAutoFilter(hom.sheet,paste("A:",excelColumn(dim(hom)[2]),sep=""))
-addAutoFilter(hem.sheet,paste("A:",excelColumn(dim(hem)[2]),sep=""))
-addAutoFilter(chet.sheet,paste("A:",excelColumn(dim(chet)[2]),sep=""))
+addAutoFilter(sum.sheet,paste0("A:",excelColumn(dim(sum)[2])))
+addAutoFilter(dnm.sheet,paste0("A:",excelColumn(dim(dnm)[2])))
+addAutoFilter(hom.sheet,paste0("A:",excelColumn(dim(hom)[2])))
+addAutoFilter(hem.sheet,paste0("A:",excelColumn(dim(hem)[2])))
+addAutoFilter(chet.sheet,paste0("A:",excelColumn(dim(chet)[2])))
+addAutoFilter(tier2.sheet,paste0("A:",excelColumn(dim(tier2)[2])))
+addAutoFilter(tier2.chet.sheet,paste0("A:",excelColumn(dim(tier2.chet)[2])))
 
-createFreezePane(dnm.sheet,2,4)
-createFreezePane(hom.sheet,2,4)
-createFreezePane(hem.sheet,2,4)
-createFreezePane(chet.sheet,2,5)
+createFreezePane(dnm.sheet,2,5)
+createFreezePane(hom.sheet,2,5)
+createFreezePane(hem.sheet,2,5)
+createFreezePane(chet.sheet,2,6)
+createFreezePane(tier2.sheet,2,5)
+createFreezePane(tier2.chet.sheet,2,6)
 
 saveWorkbook(outwb, opt$out)
 closeAllConnections()
