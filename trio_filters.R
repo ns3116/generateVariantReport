@@ -649,7 +649,7 @@ Filter.by.Function <- function(x) {
 }
 
 Filter.by.HemiHomo.Count <- function(data,threshold,is.comphet = FALSE) {
-  #Get IGM genotype count
+  if (dim(data)[1] ==0) { return(data)}
   if (is.comphet) {
     stopifnot(length(which(colnames(data) == normalized.name("Major Hom Ctrl (#1)")))>0)
     stopifnot(length(which(colnames(data) ==  normalized.name("Minor Hom Ctrl (#1)")))>0)
@@ -736,6 +736,32 @@ Filter.for.tier2 <- function(data, is.comphet = FALSE) {
    
     #make sure all columns are present
     stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
+  
+  
+    #step 3: Remove certain functions
+  Index <- grep("^SYNONYMOUS",data[normalized.name("Function (#1)")][,1])
+  if (length(Index) >0) {
+    data <- data[-Index,]
+  }
+  if (dim(data)[1] ==0) { return(data)}
+  
+  Index <- grep("^INTRON_EXON",data[normalized.name("Function (#1)")][,1])
+  if (length(Index) >0) {
+    data <- data[-Index,]
+  }
+  if (dim(data)[1] ==0) { return(data)}
+  
+  Index <- grep("^SYNONYMOUS",data[normalized.name("Function (#2)")][,1])
+  if (length(Index) >0) {
+    data <- data[-Index,]
+  }
+  if (dim(data)[1] ==0) { return(data)}
+  
+  Index <- grep("^INTRON_EXON",data[normalized.name("Function (#2)")][,1])
+  if (length(Index) >0) {
+    data <- data[-Index,]
+  }
+  if (dim(data)[1] ==0) { return(data)}
     
     #inclusion rule 1: 
     R1.1 <- sapply(data[normalized.name("HGMD Variant Class (#1)")], as.character)
@@ -791,6 +817,19 @@ Filter.for.tier2 <- function(data, is.comphet = FALSE) {
     
     #make sure all columns are present
     stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
+  
+    #step 4: Remove certain Functions
+  Index <- grep("^SYNONYMOUS",data$"Function")
+  if (length(Index) >0) {
+    data <- data[-Index,]
+  }
+  if (dim(data)[1] ==0) { return(data)}
+  
+  Index <- grep("^INTRON_EXON",data$"Function")
+  if (length(Index) >0) {
+    data <- data[-Index,]
+  }
+  if (dim(data)[1] ==0) { return(data)}
    
     #inclusion rule 1: 
     R1 <- sapply(data[normalized.name("HGMD Variant Class")], as.character)
