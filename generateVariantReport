@@ -80,6 +80,7 @@ opt = parse_args(opt_parser)
 source(paste(scriptPath,"/trio_filters.R",sep=""))
 
 MGIe <- read.table(opt$MGIe,header=T)
+VEP<-NULL
 
 #Tier 1 filtering DNM 
 #Merging additional annotations to table
@@ -109,7 +110,7 @@ dnm <- cbind(dnm,HGVSg(dnm))
 #Make IGV batch script
 IGV_dir = file.path(dirname(opt$out),"IGV")
 dir.create(IGV_dir,showWarnings=F)
-write.table(dnm[,c("Family.ID","Child","Mother","Father","Flag","Variant.ID")],file=file.path(IGV_dir,"dnm.IGV.txt"),quote=F,row.names=F,sep="\t")
+write.table(gsub("'","",as.matrix(dnm[,c("Family.ID","Child","Mother","Father","Flag","Variant.ID","Gene.Name")])),file=file.path(IGV_dir,"dnm.IGV.txt"),quote=F,row.names=F,sep="\t")
 system(paste0(scriptPath,"/makeIGVbatch.sh ",file.path(IGV_dir,"dnm.IGV.txt")," 2>",file.path(IGV_dir,"dnm.IGV.log")),wait=F)
 #Write VEP input file
 write.csv(dnm, file = "denovo.csv")
