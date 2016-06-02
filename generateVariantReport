@@ -41,6 +41,7 @@ HGVSg <- function(input, index=0){
         }
     })
     out <- as.data.frame(out)
+    if (dim(out)[1] ==0) {out <- data.frame(tmp = character())}
     if(index == 0){colnames(out) <- "HGVSg"}
     else{colnames(out) <- paste0("HGVSg.",index)}
     return(out)
