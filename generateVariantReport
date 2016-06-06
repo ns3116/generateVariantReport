@@ -63,12 +63,16 @@ nonTrioToTrio <- function(data){
 ##################################################################################################################
 scriptPath <- getScriptPath()
 
+#Source files
+source(file.path(scriptPath,"writeSampleSummaries.R"))
+
 #Opt parse
 option_list = list(
     make_option(c("-c","--cmphet"), type="character", default="CHET/CHET_comphet.csv", help="Compound Heterozygous ATAV output file [default = CHET/CHET_comphet.csv]"),
     make_option(c("-d","--dnm"), type="character", default="DNM/DNM_denovoandhom.csv", help="Denovo Mutation ATAV output file [default = DNM/DNM_denovoandhom.csv]"),
     make_option(c("-o","--out"), type="character", default="variant_report.xlsx", help="Report output file [default  = variant_report.xlsx]"),
     make_option(c("-m","--mgi"), type="character", default=paste(scriptPath,"/MGI_essential.txt",sep=""), help="MGI essiential gene list [default  = <Script Path>/MGI_essential.txt]", dest="MGIe"),
+    make_option(c("-s","--summary"), type="logical", default=F, action="store_true", help="Flag to generate individual sample text summaries [default  = False"),
     make_option(c("-n","--nontrio"), type="logical", default=F, action="store_true", help="Flag to process files as a non-trio, imposing additional filters to the tier one rules [default  = False]")
     )
     #make_option(c("-r","--raw"), type="character", default="atav_summary.xlsx", help="ATAV raw output summary excel [default = atav_summary.xlsx")
@@ -241,6 +245,7 @@ samp.dnm.tierOne <- dnm[which(dnm$Child==samp),]
 samp.hom.tierOne <- hom[which(hom$Child==samp),]
 samp.hem.tierOne <- hem[which(hem$Child==samp),]
 samp.chet.tierOne <- chet[which(chet$Child==samp),]
+if(opt$summary){writeSummary(samp.dnm.tierOne,samp.hom.tierOne,samp.hem.tierOne,samp.chet.tierOne,dirname(opt$out))}
 #HZ OMIM
 samp.dnm.hzo <- samp.dnm.tierOne[which((samp.dnm.tierOne$Polyphen.Humvar.Score >= .95  | 
                                         samp.dnm.tierOne$Function %in%  LoF_var)  & 
