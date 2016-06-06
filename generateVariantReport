@@ -80,12 +80,10 @@ option_list = list(
 opt_parser = OptionParser(option_list=option_list)
 opt = parse_args(opt_parser)
 
-
 #read csv file as dataframe for dnm, chet, and add_anno, and MGI essential gene list
 source(paste(scriptPath,"/trio_filters.R",sep=""))
 
 MGIe <- read.table(opt$MGIe,header=T)
-VEP<-NULL
 
 #Tier 1 filtering DNM 
 #Merging additional annotations to table
@@ -117,7 +115,6 @@ IGV_dir = file.path(dirname(opt$out),"IGV")
 dir.create(IGV_dir,showWarnings=F)
 write.table(gsub("'","",as.matrix(dnm[,c("Family.ID","Child","Mother","Father","Flag","Variant.ID","Gene.Name")])),file=file.path(IGV_dir,"dnm.IGV.txt"),quote=F,row.names=F,sep="\t")
 system(paste0(scriptPath,"/makeIGVbatch.sh ",file.path(IGV_dir,"dnm.IGV.txt")," 2>",file.path(IGV_dir,"dnm.IGV.log")),wait=F)
-#Write VEP input file
 write.csv(dnm, file = "denovo.csv")
 
 #hemizygous
@@ -188,7 +185,7 @@ tier2.chet <- cbind(tier2.chet, HGVSg(tier2.chet,1), HGVSg(tier2.chet,2))
 #Make VEP input file
 VEP_dir = file.path(dirname(opt$out),"VEP")
 dir.create(VEP_dir,showWarnings=F)
-write.table(c(as.vector(dnm$HGVSg),as.vector(hem$HGVSg),as.vector(hom$HGVSg),as.vector(chet$HGVSg.1),as.vector(chet$HGVSg.2),as.vector(tier2$HGVSg),as.vector(tier2.chet$HGVSg.1),as.vector(tier2.chet$HGVSg.2)),file=file.path(VEP_dir,"all_var.VEP.input"),quote=F,col.names=F,row.names=F)
+write.table(sub("-","\t",sub("-","\t.\t",sub("-","\t",c(as.vector(dnm$Variant.ID),as.vector(hem$Variant.ID),as.vector(hom$Variant.ID),as.vector(chet$Variant.ID.1),as.vector(chet$Variant.ID.2),as.vector(tier2$Variant.ID),as.vector(tier2.chet$Variant.ID.1),as.vector(tier2.chet$Variant.ID.2))))),file=file.path(VEP_dir,"all_var.VEP.input"),quote=F,col.names=F,row.names=F)
 
 #Create workbook and sheets
 outwb <- createWorkbook()
@@ -246,6 +243,7 @@ samp.hom.tierOne <- hom[which(hom$Child==samp),]
 samp.hem.tierOne <- hem[which(hem$Child==samp),]
 samp.chet.tierOne <- chet[which(chet$Child==samp),]
 if(opt$summary){writeSummary(samp.dnm.tierOne,samp.hom.tierOne,samp.hem.tierOne,samp.chet.tierOne,dirname(opt$out))}
+
 #HZ OMIM
 samp.dnm.hzo <- samp.dnm.tierOne[which((samp.dnm.tierOne$Polyphen.Humvar.Score >= .95  | 
                                         samp.dnm.tierOne$Function %in%  LoF_var)  & 
