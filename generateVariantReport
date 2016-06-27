@@ -84,7 +84,6 @@ opt = parse_args(opt_parser)
 source(paste(scriptPath,"/trio_filters.R",sep=""))
 
 MGIe <- read.table(opt$MGIe,header=T)
-
 #Tier 1 filtering DNM 
 #Merging additional annotations to table
 dnm.data = read.csv(opt$dnm,na.strings="NA")
@@ -110,11 +109,13 @@ if(opt$nontrio){
     tier2 <- Filter.for.tier2(data)
 }
 dnm <- cbind(dnm,HGVSg(dnm))
+if(!opt$nontrio){
 #Make IGV batch script
 IGV_dir = file.path(dirname(opt$out),"IGV")
 dir.create(IGV_dir,showWarnings=F)
 write.table(gsub("'","",as.matrix(dnm[,c("Family.ID","Child","Mother","Father","Flag","Variant.ID","Gene.Name")])),file=file.path(IGV_dir,"dnm.IGV.txt"),quote=F,row.names=F,sep="\t")
 system(paste0(scriptPath,"/makeIGVbatch.sh ",file.path(IGV_dir,"dnm.IGV.txt")," 2>",file.path(IGV_dir,"dnm.IGV.log")),wait=F)
+}
 write.csv(dnm, file = "denovo.csv")
 
 #hemizygous
@@ -139,9 +140,9 @@ if(opt$nontrio){
     hom <- Filter.for.homozygous(data)
     data <- Filter.by.HemiHomo.Count(data,9)
     tier2 <- rbind(tier2,Filter.for.tier2(data))
+    tier2 <- cbind(tier2, HGVSg(tier2))
 }
 hom <- cbind(hom, HGVSg(hom))
-tier2 <- cbind(tier2, HGVSg(tier2))
 write.csv(hom, file = "homozygous.csv")
 
 if(opt$nontrio){chet<-dnm.data[which(dnm.data$Genotype == "empty"),]
@@ -159,7 +160,6 @@ chet.data <- chet.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(chet.da
 col.id <- grep("Function...2.",colnames(chet.data))
 new.pos <- 5
 chet.data <- chet.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(chet.data))[-(col.id-new.pos+1)])]
-
 data <- Filter.by.Flag(chet.data,'compound heterozygote', strict = TRUE)  
 chet <- Filter.for.compound.heterozygote(data)
 data <- Filter.by.HemiHomo.Count(data,9,T)
@@ -185,7 +185,11 @@ tier2.chet <- cbind(tier2.chet, HGVSg(tier2.chet,1), HGVSg(tier2.chet,2))
 #Make VEP input file
 VEP_dir = file.path(dirname(opt$out),"VEP")
 dir.create(VEP_dir,showWarnings=F)
+if(opt$nontrio){
+write.table(sub("-","\t",sub("-","\t.\t",sub("-","\t",c(as.vector(dnm$Variant.ID),as.vector(hem$Variant.ID),as.vector(hom$Variant.ID),as.vector(chet$Variant.ID.1),as.vector(chet$Variant.ID.2))))),file=file.path(VEP_dir,"all_var.VEP.input"),quote=F,col.names=F,row.names=F)
+}else{
 write.table(sub("-","\t",sub("-","\t.\t",sub("-","\t",c(as.vector(dnm$Variant.ID),as.vector(hem$Variant.ID),as.vector(hom$Variant.ID),as.vector(chet$Variant.ID.1),as.vector(chet$Variant.ID.2),as.vector(tier2$Variant.ID),as.vector(tier2.chet$Variant.ID.1),as.vector(tier2.chet$Variant.ID.2))))),file=file.path(VEP_dir,"all_var.VEP.input"),quote=F,col.names=F,row.names=F)
+}
 
 #Create workbook and sheets
 outwb <- createWorkbook()
@@ -378,13 +382,15 @@ samp.gcClinicalOMIM <- unique(gsub("'","",c(as.vector(samp.dnm.tierOne[which(!is
 samp.gcClinicalnonOMIM <- unique(gsub("'","",c(as.vector(samp.hzo),as.vector(samp.hze),as.vector(samp.LoF))))
 samp.gcClinicalnonOMIM <- c(samp.gcClinicalnonOMIM[!samp.gcClinicalnonOMIM %in% samp.gcClinicalOMIM],"-")
 
-samp.tier2gcClinicalOMIM <- unique(gsub("'","",c(as.vector(tier2[which(tier2$Child==samp),][which(!is.na(tier2[which(tier2$Child==samp),]$OMIM.Disease.Name)),]$Gene.Name),as.vector(tier2.chet[which(tier2.chet$Child==samp),][which(!is.na(tier2.chet[which(tier2.chet$Child==samp),]$OMIM.Disease.Name...1)),]$Gene.Name))))
+if(opt$nontrio){samp.tier2gcClinicalOMIM=""}
+else{
+samp.tier2gcClinicalOMIM <- unique(gsub("'","",c(as.vector(tier2[which(tier2$Child==samp),][which(!is.na(tier2[which(tier2$Child==samp),]$OMIM.Disease.Name)),]$Gene.Name),as.vector(tier2.chet[which(tier2.chet$Child==samp),][which(!is.na(tier2.chet[which(tier2.chet$Child==samp),]$OMIM.Disease.Name.1)),]$Gene.Name))))
 samp.tier2gcClinicalOMIM <- c(samp.tier2gcClinicalOMIM[!samp.tier2gcClinicalOMIM %in% samp.gcClinicalOMIM],"-")
 samp.tier2gcClinicalOMIM <- c(samp.tier2gcClinicalOMIM[!samp.tier2gcClinicalOMIM %in% samp.gcClinicalnonOMIM],"-")
+}
 
 sum <- rbind(sum,c(samp,Ndnm,Nhem,Nhom,Nchet,"",paste(samp.hze,collapse="\n"),paste(samp.hzo,collapse="\n"),paste(samp.clin,collapse="\n"),paste(samp.LoF,collapse="\n"),gsub("^\n*([^)]*\\)?)\n*$","\\1",paste(samp.KnownVar,collapse="\n")),"","",gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalOMIM,sep=": ",collapse=": \n")))),gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalnonOMIM,sep=": ",collapse=": \n")))),gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.tier2gcClinicalOMIM,sep=": ",collapse=": \n"))))))
 }
-
 #Write Excel file
 
 #colnames(sum) <- c("diagseq","DNM","HEM","HOM","CHET","Ethn","HZ[E]","HZ[OMIM]","ClinGen/Var[LoF]","LoF depleted/pLI","KnownVar(PMID)","Candidate Genetic Diagnosis","Pheno","GC Clinical Fit(H/M/L)")
@@ -439,15 +445,17 @@ addAutoFilter(dnm.sheet,paste0("A:",excelColumn(dim(dnm)[2])))
 addAutoFilter(hom.sheet,paste0("A:",excelColumn(dim(hom)[2])))
 addAutoFilter(hem.sheet,paste0("A:",excelColumn(dim(hem)[2])))
 addAutoFilter(chet.sheet,paste0("A:",excelColumn(dim(chet)[2])))
-addAutoFilter(tier2.sheet,paste0("A:",excelColumn(dim(tier2)[2])))
-addAutoFilter(tier2.chet.sheet,paste0("A:",excelColumn(dim(tier2.chet)[2])))
 
 createFreezePane(dnm.sheet,2,5)
 createFreezePane(hom.sheet,2,5)
 createFreezePane(hem.sheet,2,5)
 createFreezePane(chet.sheet,2,6)
+if(!opt$nontrio){
 createFreezePane(tier2.sheet,2,5)
 createFreezePane(tier2.chet.sheet,2,6)
+addAutoFilter(tier2.sheet,paste0("A:",excelColumn(dim(tier2)[2])))
+addAutoFilter(tier2.chet.sheet,paste0("A:",excelColumn(dim(tier2.chet)[2])))
+}
 
 saveWorkbook(outwb, opt$out)
 closeAllConnections()
