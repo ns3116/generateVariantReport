@@ -45,7 +45,7 @@ scriptPath <- getScriptPath()
 
 #Opt parse
 option_list = list(
-    make_option(c("-c","--csv"), type="character", default="VARS/VARS_genotypes.csv", help="Input csv from ATAV output file [default = VARS/VARS_genotypes.csv]"),
+    make_option(c("-c","--csv"), type="character", default="nonTrio/nonTrio_genotypes.csv", help="Input csv from ATAV output file [default = nonTrio/nonTrio_genotypes.csv]"),
     make_option(c("-o","--out"), type="character", default="nonTrio_variant_report.xlsx", help="Report output file [default  = nonTrio_variant_report.xlsx]"),
     make_option(c("-m","--mgi"), type="character", default=paste(scriptPath,"/MGI_essential.txt",sep=""), help="MGI essiential gene list [default  = <Script Path>/MGI_essential.txt]", dest="MGIe"),
     make_option(c("-n","--nontrio"), type="logical", default=F, action="store_true", help="Flag to process files as a non-trio, imposing additional filters to the tier one rules [default  = False]")
@@ -59,7 +59,6 @@ opt = parse_args(opt_parser)
 source(paste(scriptPath,"/filters_nontrio.R",sep=""))
 
 MGIe <- read.table(opt$MGIe,header=T)
-
 #Tier 1 filtering DNM 
 #Merging additional annotations to table
 input.data = read.csv(opt$csv,na.strings="NA")
@@ -168,6 +167,7 @@ for(col in c(2:6)){
     setColumnWidth(sum.sheet,col,5)
 }
 redFill <- Fill(foregroundColor = "red", backgroundColor = "red")
+
 for(col in c(7:11)){
     ind <- which(sum[,col] != "")
     if(length(ind) > 0){CB.setFill(cellBlock, redFill, ind, col)}
