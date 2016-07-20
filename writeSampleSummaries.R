@@ -2,13 +2,15 @@
 library(rtf)
 
 writeDNM <- function(dnm,rtf){
+    #Change different colname in list-var-geno
+    colnames(dnm) <- gsub("Ctrl.Maf","Ctrl.MAF",colnames(dnm))
     for(i in 1:dim(dnm)[1]){
         setFontSize(rtf,12)
         gene = gsub("'","",dnm[i,]$Gene.Name)
         addHeader(rtf,gene,subtitle=dnm[i,]$Variant.ID,font.size=14)
         startParagraph(rtf)
         addText(rtf,paste0("This is a ",dnm[i,]$Flag," ",gsub("_"," ",tolower(dnm[i,]$Function))," variant in ",gene,". "))
-        if(dnm[i,]$Ctrl.MAF == 0 & (dnm[i,]$Evs.All.Maf == 0 | is.na(dnm[i,]$Evs.All.Maf)) & (dnm[i,]$ExAC.global.maf == 0 | is.na(dnm[i,]$ExAC.global.maf))){
+        if((dnm[i,]$Ctrl.MAF == 0 | is.na(dnm[i,]$Ctrl.MAF)) & (dnm[i,]$Evs.All.Maf == 0 | is.na(dnm[i,]$Evs.All.Maf)) & (dnm[i,]$ExAC.global.maf == 0 | is.na(dnm[i,]$ExAC.global.maf))){
             addText(rtf,"This variant is absent from internal and external control samples. ")}
         else{addText(rtf,paste0("This variant has a control MAF of ",dnm[i,]$Ctrl.MAF*100,"% in IGM controls, ",dnm[i,]$Evs.All.Maf*100,"% in EVS, and ",dnm[i,]$ExAC.global.maf,"% in ExAC. "))}
         if(dnm[i,]$Function == "NON_SYNONYMOUS_CODING"){addText(rtf,paste0("It is a ",gsub("_"," ",dnm[i,]$Polyphen.Humvar.Prediction)," missense variant with a PolyPhen2 score of ",dnm[i,]$Polyphen.Humvar.Score,". "))}
@@ -87,3 +89,18 @@ writeSummary <- function(dnm,hom,hem,chet,dir){
     return
 }
 
+writeNonTrioSummary <- function(samp.kv,samp.kv5,samp.pdnm,samp.prec,samp.pchet,dir){
+    dir.create(file.path(dir,"Sample_Summaries"),showWarnings=F)
+    allSamps <- c(as.vector(samp.kv$Sample.Name),as.vector(samp.kv5$Sample.Name),as.vector(samp.pdnm$Sample.Name),as.vector(samp.prec$Sample.Name),as.vector(samp.pchet$Sample.Name))
+    if(length(allSamps) == 0){return}
+    out <- file.path(dir,"Sample_Summaries",paste0(allSamps[1],".nonTrio.doc"))
+    rtf <- RTF(out,width=8.5,height=11,omi=c(1,1,1,1),font.size=18)
+    addHeader(rtf,allSamps[1],font.size=18)
+    if(dim(samp.kv)[1] > 0){writeDNM(samp.kv,rtf)}
+    if(dim(samp.pdnm)[1] > 0){writeDNM(samp.pdnm,rtf)}
+    if(dim(samp.kv5)[1] > 0){writeDNM(samp.kv5,rtf)}
+    if(dim(samp.prec)[1] > 0){writeDNM(samp.prec,rtf)}
+    if(dim(samp.pchet)[1] > 0){writeDNM(samp.chet,rtf)}
+    done(rtf)
+    return
+}
