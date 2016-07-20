@@ -43,11 +43,16 @@ nonTrioToTrio <- function(data){
 ##################################################################################################################
 scriptPath <- getScriptPath()
 
+#Source files
+source(file.path(scriptPath,"writeSampleSummaries.R"))
+
 #Opt parse
 option_list = list(
     make_option(c("-c","--csv"), type="character", default="nonTrio/nonTrio_genotypes.csv", help="Input csv from ATAV output file [default = nonTrio/nonTrio_genotypes.csv]"),
     make_option(c("-o","--out"), type="character", default="nonTrio_variant_report.xlsx", help="Report output file [default  = nonTrio_variant_report.xlsx]"),
     make_option(c("-m","--mgi"), type="character", default=paste(scriptPath,"/MGI_essential.txt",sep=""), help="MGI essiential gene list [default  = <Script Path>/MGI_essential.txt]", dest="MGIe"),
+    make_option(c("-s","--summary"), type="logical", default=F, action="store_true", help="Flag to generate individual sample text summaries [default  = False"),
+    make_option(c("-p","--pheno"), type="character", default="NULL", help="seqDB file containing sample phenotypes [default  = NULL]"),
     make_option(c("-n","--nontrio"), type="logical", default=F, action="store_true", help="Flag to process files as a non-trio, imposing additional filters to the tier one rules [default  = False]")
     )
     #make_option(c("-r","--raw"), type="character", default="atav_summary.xlsx", help="ATAV raw output summary excel [default = atav_summary.xlsx")
@@ -59,6 +64,7 @@ opt = parse_args(opt_parser)
 source(paste(scriptPath,"/filters_nontrio.R",sep=""))
 
 MGIe <- read.table(opt$MGIe,header=T)
+
 #Tier 1 filtering DNM 
 #Merging additional annotations to table
 input.data = read.csv(opt$csv,na.strings="NA")
@@ -127,17 +133,40 @@ Npdnm <- length(which(pdnm$Sample.Name==samp))
 Nprec <- length(which(prec$Sample.Name==samp))
 Npchet <- length(which(pchet$Sample.Name==samp))
 
+samp.kv <- kv[which(kv$Sample.Name==samp),]
+samp.kv5 <- kv5[which(kv5$Sample.Name==samp),]
+samp.pdnm <- pdnm[which(pdnm$Sample.Name==samp),]
+samp.prec <- prec[which(prec$Sample.Name==samp),]
+samp.pchet <- pchet[which(pchet$Sample.Name==samp),]
 samp.kv.genes <- kv[which(kv$Sample.Name==samp),]$Gene.Name
 samp.kv5.genes <- kv5[which(kv5$Sample.Name==samp),]$Gene.Name
 samp.pdnm.genes <- pdnm[which(pdnm$Sample.Name==samp),]$Gene.Name
 samp.prec.genes <- prec[which(prec$Sample.Name==samp),]$Gene.Name
 samp.pchet.genes <- pchet[which(pchet$Sample.Name==samp),]$Gene.Name
+if(opt$summary){writeNonTrioSummary(samp.kv,samp.kv5,samp.pdnm,samp.prec,samp.pchet,dirname(opt$out))}
 
 
 sum <- rbind(sum,c(samp,Nkv,Nkv5,Npdnm,Nprec,Npchet,paste(gsub("'","",samp.kv.genes),collapse="\n"),paste(gsub("'","",samp.kv5.genes),collapse="\n"),paste(gsub("'","",samp.pdnm.genes),collapse="\n"),paste(gsub("'","",samp.prec.genes),collapse="\n"),paste(gsub("'","",samp.pchet.genes),collapse="\n"),""))
 
 }
 
+#Add in samples with no tier1/2 variants
+samps <- unique(input.data$Sample.Name)
+for(samp in samps[!samps %in% sum[,1]]){
+    sum <- rbind(sum,c(samp,"0","0","0","0","0","","","","","",""))
+}
+sum <- sum[order(gsub(".*(f[0-9]*)","\\1",sum[,1])),]
+
+if(opt$pheno != "NULL"){
+    pheno <- read.csv(opt$pheno)
+    for(i in 1:dim(sum)[1]){
+        samp <- sum[i,1]
+        sampPheno <- pheno[which(pheno$CHGVID == samp),]$DetailedPhenotype
+        if(sampPheno == "NULL" || sampPheno == ""){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype}
+        if(sampPheno == "NULL" || sampPheno == ""){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype}
+        sum[i,12] <- as.vector(sampPheno)
+    }
+}
 #Write Excel file
 
 sum <- rbind(c("diagseq","pDNM KV","pDNM KV5","T2 pDNM LoF","T2 pRec LoF","T2 pCHET LoF","pDNM KnownVar","pDNM KnownVar (<5 Alleles)","Tier 2 pDNM LoF","Tier 2 pRec LoF","Tier 2 pCHET LoF","Phenotype"),sum)
