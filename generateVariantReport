@@ -73,6 +73,7 @@ option_list = list(
     make_option(c("-o","--out"), type="character", default="variant_report.xlsx", help="Report output file [default  = variant_report.xlsx]"),
     make_option(c("-m","--mgi"), type="character", default=paste(scriptPath,"/MGI_essential.txt",sep=""), help="MGI essiential gene list [default  = <Script Path>/MGI_essential.txt]", dest="MGIe"),
     make_option(c("-s","--summary"), type="logical", default=F, action="store_true", help="Flag to generate individual sample text summaries [default  = False"),
+    make_option(c("-p","--pheno"), type="character", default="NULL", help="seqDB file containing sample phenotypes [default  = NULL]"),
     make_option(c("-n","--nontrio"), type="logical", default=F, action="store_true", help="Flag to process files as a non-trio, imposing additional filters to the tier one rules [default  = False]")
     )
     #make_option(c("-r","--raw"), type="character", default="atav_summary.xlsx", help="ATAV raw output summary excel [default = atav_summary.xlsx")
@@ -391,6 +392,25 @@ samp.tier2gcClinicalOMIM <- c(samp.tier2gcClinicalOMIM[!samp.tier2gcClinicalOMIM
 
 sum <- rbind(sum,c(samp,Ndnm,Nhem,Nhom,Nchet,"",paste(samp.hze,collapse="\n"),paste(samp.hzo,collapse="\n"),paste(samp.clin,collapse="\n"),paste(samp.LoF,collapse="\n"),gsub("^\n*([^)]*\\)?)\n*$","\\1",paste(samp.KnownVar,collapse="\n")),"","",gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalOMIM,sep=": ",collapse=": \n")))),gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalnonOMIM,sep=": ",collapse=": \n")))),gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.tier2gcClinicalOMIM,sep=": ",collapse=": \n"))))))
 }
+
+#Add in samples with no tier1/2 variants
+samps <- unique(dnm.data$Sample.Name)
+for(samp in samps[!samps %in% sum[,1]]){
+    sum <- rbind(sum,c(samp,"0","0","0","0","0","","","","","","","","",""))
+}
+sum <- sum[order(gsub(".*(f[0-9]*)","\\1",sum[,1])),]
+
+if(opt$pheno != "NULL"){
+    pheno <- read.csv(opt$pheno)
+    for(i in 1:dim(sum)[1]){
+        samp <- sum[i,1]
+        sampPheno <- pheno[which(pheno$CHGVID == samp),]$DetailedPhenotype
+        if(sampPheno == "NULL" || sampPheno == ""){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype}
+        if(sampPheno == "NULL" || sampPheno == ""){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype}
+        sum[i,12] <- as.vector(sampPheno)
+    }
+}
+
 #Write Excel file
 
 #colnames(sum) <- c("diagseq","DNM","HEM","HOM","CHET","Ethn","HZ[E]","HZ[OMIM]","ClinGen/Var[LoF]","LoF depleted/pLI","KnownVar(PMID)","Candidate Genetic Diagnosis","Pheno","GC Clinical Fit(H/M/L)")
