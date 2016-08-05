@@ -16,7 +16,7 @@ normalized.name <- function(names) {
 }
 
 Filter.for.compound.heterozygote <- function(data) {
-  #check for correct columns, just in case the format has been changed
+  #check for correct columns, just in case the format has been change
   columns <- c("Var Ctrl Freq #1 & #2 (co-occurance)","Genotype (mother) (#1)", 
                "Genotype (father) (#1)","Genotype (mother) (#2)","Genotype (father) (#2)",
                 "Function (#1)","Function (#2)",
@@ -36,6 +36,8 @@ Filter.for.compound.heterozygote <- function(data) {
   
   #make sure all columns are present
   stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
+  
+  if (dim(data)[1] ==0) { return(data)}
   
   #step 1: 
   data   <- data[is.na(data[normalized.name("Var Ctrl Freq #1 & #2 (co-occurance)")])
@@ -250,6 +252,7 @@ Filter.for.homozygous <- function(data) {
   #make sure all columns are present
   stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
   
+  if (dim(data)[1] ==0) { return(data)}
   #step 1: 
   data   <- data[is.na(data[normalized.name("Percent Read Alt (child)")])
                  | data[normalized.name("Percent Read Alt (child)")] > 0.799,]
@@ -374,6 +377,7 @@ Filter.for.hemizygous <- function(data) {
   #make sure all columns are present
   stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
   
+  if (dim(data)[1] ==0) { return(data)}
   #step 1: 
   data   <- data[is.na(data[normalized.name("Percent Read Alt (child)")])
                  | data[normalized.name("Percent Read Alt (child)")] > 0.7999,]
@@ -543,5 +547,296 @@ Filter.for.denovo <- function(data) {
                   & data[normalized.name("Samtools Raw Coverage (father)")] > 9)
                ,]
   
+  data
+}
+
+parse.hemihomo.count.exac <- function(s) {
+  if (is.na(s)) {
+    return(0)
+  } else {
+    has.4.genotypes <- (length(grep("na",s))>0)
+    fields <- strsplit(gsub("na/","",gsub("'","",s)),"/")[[1]]
+    fields <- as.numeric(fields)  
+    if (has.4.genotypes) { #na/heterozygous/hemizygous/homozygous
+      return (fields[2] + fields[3]) 
+    } else { #hom-ref/het/hom
+      return(fields[3])
+    }
+  }
+}
+
+parse.allele.count.exac <- function(s) {
+  if (is.na(s)) {
+    return(0)
+  } else {
+    has.4.genotypes <- (length(grep("na",s))>0)
+    fields <- strsplit(gsub("na/","",gsub("'","",s)),"/")[[1]]
+    fields <- as.numeric(fields)  
+    if (has.4.genotypes) { #na/heterozygous/hemizygous/homozygous
+       return (fields[1] + fields[2] + 2* fields[3]) 
+    } else { #hom-ref/het/hom
+      return (min(2*fields[1]+fields[2], fields[2]+ 2* fields[3]))  
+    }
+  }
+}
+
+parse.hemihomo.count.evs <- function(s) {
+  if (is.na(s)) {
+    return(0)
+  } else {
+    fields <- strsplit(s,"/")[[1]]
+    if (length(grep('r',s)) == 0) { #snv, change the string so it has the same format as indels
+      alt.allele <- substr(s,1,1)
+      s <- gsub(alt.allele,"_",s) # make it a non alpha first
+      s <- gsub("[[:alpha:]]","r",s) # change the other one to ref
+      s <- gsub("_","a",s) # change the alt to "a".
+      fields <- strsplit(s,"/")[[1]] #split again since s has been normlized
+    }
+    hemi.hom.count <- 0
+    for (i in 1: length(fields)) {
+      current.record <- strsplit(fields[i],"=")[[1]]
+      current.type = gsub("[[:digit:]]","",current.record[1]) #works for indels only, no effect on snv
+      current.count <- as.numeric(current.record[2])
+      if (length(grep("r",current.type)) == 0) { #counting only aa or a
+        hemi.hom.count <- hemi.hom.count +  current.count
+      } 
+    }
+    return (hemi.hom.count)
+  }
+}
+
+parse.allele.count.evs <- function(s) {
+  if (is.na(s)) {
+    return(0)
+  } else {
+    fields <- strsplit(s,"/")[[1]]
+    if (length(grep('r',s)) == 0) { #snv, change the string so it has the same format as indels
+      alt.allele <- substr(s,1,1)
+      s <- gsub(alt.allele,"_",s) # make it a non alpha first
+      s <- gsub("[[:alpha:]]","r",s) # change the other one to ref
+      s <- gsub("_","a",s) # change the alt to "a".
+      fields <- strsplit(s,"/")[[1]] #split again since s has been normlized
+    }
+      
+    hom.allele.count <- 0
+    het.allele.count <- 0
+    hom.ref.allele.count <- 0
+    for (i in 1: length(fields)) {
+        current.record <- strsplit(fields[i],"=")[[1]]
+        current.type = gsub("[[:digit:]]","",current.record[1]) #works for indels only, no effect on snv
+        current.count <- as.numeric(current.record[2])
+        if (length(grep("rr",current.type)) > 0) {
+          hom.ref.allele.count <- hom.ref.allele.count + 2 * current.count
+        } else if (length(grep("aa",current.type)) > 0) {
+          hom.allele.count <- hom.allele.count + 2 * current.count
+        } else if (length(grep("ar",current.type)) > 0){
+          het.allele.count <- het.allele.count + current.count
+        } else if (length(grep("r",current.type)) > 0) {
+          hom.ref.allele.count <- hom.ref.allele.count + current.count 
+        } else { # a
+          hom.allele.count <- hom.allele.count + current.count
+        }
+    }
+    return (min(het.allele.count + hom.allele.count, het.allele.count +  hom.ref.allele.count ))
+  }
+}
+
+#temp <- data[data["variant.type"] == "indel" & !is.na(data["evs.all.genotype.count"]),c("ref.allele","alt.allele","evs.all.genotype.count")]
+
+Filter.by.function <- function(x) {
+  return ((x=="stop_gained") | (x =="stop_lost") | (x =="start_lost")
+          | (x=="frame_shift") | (x== "splice_site_donor") | (x=="splice_site_acceptor") | (x=="codon_deletion") | (x=="codon_insertion") | (x=="codon_change_plus_codon_deletion") | (x=="codon_change_plus_codon_insertion") | (x=="exon_deleted"))
+}
+
+Filter.by.hemihomo.count <- function(data,threshold,is.comphet = false) {
+  #get igm genotype count
+  if (is.comphet) {
+    stopifnot(length(which(colnames(data) == normalized.name("major hom ctrl (#1)")))>0)
+    stopifnot(length(which(colnames(data) ==  normalized.name("minor hom ctrl (#1)")))>0)
+    genotypecount.1 <- cbind(data[normalized.name("major hom ctrl (#1)")] , data[normalized.name("minor hom ctrl (#1)")] )
+    genotypecount.1 <- apply(genotypecount.1,1,function(x) min(x))  
+    
+    stopifnot(length(which(colnames(data) == normalized.name("major hom ctrl (#2)")))>0)
+    stopifnot(length(which(colnames(data) ==  normalized.name("minor hom ctrl (#2)")))>0)
+    genotypecount.2 <- cbind(data[normalized.name("major hom ctrl (#2)")] , data[normalized.name("minor hom ctrl (#2)")] )
+    genotypecount.2 <- apply(genotypecount.2,1,function(x) min(x))  
+    
+    #get evs genotype count
+    column.name = normalized.name("evs.all.genotype.count (#1)")
+    stopifnot(length(which(colnames(data) == column.name))>0)
+    tmp <- sapply(data[column.name], as.character)
+    evs.genotypecount.1<- sapply(tmp, parse.hemihomo.count.evs)
+    
+    column.name = normalized.name("evs.all.genotype.count (#2)")
+    stopifnot(length(which(colnames(data) == column.name))>0)
+    tmp <- sapply(data[column.name], as.character)
+    evs.genotypecount.2<- sapply(tmp, parse.hemihomo.count.evs)
+    
+    #get exac genotype count
+    column.name = normalized.name("exac.global.gts (#1)")
+    tmp <- sapply(data[column.name], as.character)
+    exac.genotypecount.1 <- sapply(tmp, parse.hemihomo.count.exac)
+    
+    column.name = normalized.name("exac.global.gts (#2)")
+    tmp <- sapply(data[column.name], as.character)
+    exac.genotypecount.2 <- sapply(tmp, parse.hemihomo.count.exac)
+    
+    all <- ((genotypecount.1 + evs.genotypecount.1 + exac.genotypecount.1) <= threshold) 
+    all <- all & ((genotypecount.2 + evs.genotypecount.2 + exac.genotypecount.2) <= threshold)
+    
+  } else {
+    stopifnot(length(which(colnames(data) == "major.hom.ctrl"))>0)
+    stopifnot(length(which(colnames(data) == "minor.hom.ctrl"))>0)
+    genotypecount <- cbind(data["major.hom.ctrl"] , data["minor.hom.ctrl"] )
+    genotypecount <- apply(genotypecount,1,function(x) min(x))  
+    
+    #get evs genotype count
+    stopifnot(length(which(colnames(data) == "evs.all.genotype.count"))>0)
+    tmp <- sapply(data["evs.all.genotype.count"], as.character)
+    evs.genotypecount<- sapply(tmp, parse.hemihomo.count.evs)
+    
+    #get exac genotype count
+    stopifnot(length(which(colnames(data) == "exac.global.gts"))>0)
+    tmp <- sapply(data["exac.global.gts"], as.character)
+    exac.genotypecount <- sapply(tmp, parse.hemihomo.count.exac)
+    
+    all <- ((genotypecount + evs.genotypecount + exac.genotypecount) <= threshold)  
+  }
+  
+  result <- data[all,]
+}
+
+Filter.by.Allele.Count <- function(data, threshold) {  
+  #get igm allele count
+    browser()
+  stopifnot(length(which(colnames(data) == "major.hom.ctrl"))>0)
+  stopifnot(length(which(colnames(data) == "het.ctrl"))>0)
+  stopifnot(length(which(colnames(data) == "minor.hom.ctrl"))>0)
+  allelecount <- cbind(2*data["major.hom.ctrl"] + data["het.ctrl"], data["het.ctrl"] + 2*data["minor.hom.ctrl"] )
+  allelecount <- apply(allelecount,1,function(x) min(x))
+  
+  #get exac allele count
+  stopifnot(length(which(colnames(data) == "evs.all.genotype.count"))>0)
+  
+  tmp <- sapply(data["evs.all.genotype.count"], as.character)
+  evs.allelecount <- sapply(tmp, parse.allele.count.evs)
+  
+  tmp <- sapply(data["exac.global.gts"], as.character)
+  exac.allelecount <- sapply(tmp, parse.allele.count.exac)
+  
+  qc.fail.ctrl <- sapply(data["qc.fail.ctrl"], as.numeric)
+  all <- ((allelecount + evs.allelecount + exac.allelecount + qc.fail.ctrl) <= threshold)
+  result <- data[all,]
+}
+
+
+Filter.for.tier2 <- function(data, is.comphet = false) {
+  if (is.comphet) {
+    #check for correct columns
+    columns <- c("hgmd variant class (#1)","hgmd variant class (#2)","hgmd flanking count (#1)", "hgmd flanking count (#2)","clinvar flanking count (#1)","clinvar clinical significance (#1)","function (#1)","function (#2)","clingen haploinsufficiencydesc (#1)","clinvar pathogenic indel count (#1)", "clinvar pathogenic cnv count (#1)", "clinvar pathogenic snv splice count (#1)", "clinvar pathogenic snv nonsense count (#1)")
+   
+    #make sure all columns are present
+    stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
+    
+    #inclusion rule 1: 
+    r1.1 <- sapply(data[normalized.name("hgmd variant class (#1)")], as.character)
+    r1.1 <- sapply(r1.1, function(x) length(grep("dm",x)) > 0)
+    r1.2 <- sapply(data[normalized.name("hgmd variant class (#2)")], as.character)
+    r1.2 <- sapply(r1.2, function(x) length(grep("dm",x)) > 0) 
+    r1 <- r1.1 | r1.2
+
+    #inclusion rule 2:
+    suppresswarnings(temp1 <- sapply(data[normalized.name("hgmd flanking count (#1)")], as.numeric))
+    temp1[is.na(temp1)] <- 0
+    suppresswarnings(temp2 <- sapply(data[normalized.name("clinvar flanking count (#1)")], as.numeric))
+    temp2[is.na(temp2)] <- 0
+    suppresswarnings(temp3 <- sapply(data[normalized.name("hgmd flanking count (#2)")], as.numeric))
+    temp3[is.na(temp3)] <- 0
+    suppresswarnings(temp4 <- sapply(data[normalized.name("clinvar flanking count (#2)")], as.numeric))
+    temp4[is.na(temp4)] <- 0
+    r2 <- temp1 > 0 | temp2 > 0 | temp3 > 0 | temp4 > 0
+
+    #inclusion rule 3:
+    temp <- sapply(data[normalized.name("clinvar clinical significance (#1)")], as.character)
+    r3 = (temp == "pathogenic") | (temp == "likely pathogenic") | (temp == "likely pathogenic;pathogenic")
+    
+    functional.1 <- Filter.by.function(sapply(data[normalized.name("function (#1)")], as.character))
+    functional.2 <- Filter.by.function(sapply(data[normalized.name("function (#2)")], as.character))
+
+    #inclusion rule 4:
+    r4 <- (functional.1 | functional.2) & (!eval(parse(text=paste0("data$",normalized.name("clingen haploinsufficiencydesc (#1)")))) %in% c("na","no evidence","little evidence"))
+    
+    #inclusion rule 5:
+    suppresswarnings(temp <- sapply(data[normalized.name("clinvar pathogenic indel count (#1)")], as.numeric))
+    temp[is.na(temp)] <- 0
+    r5 <- (functional.1 | functional.2) & (temp > 0)
+    
+    #inclusion rule 6:
+    suppresswarnings(temp <- sapply(data[normalized.name("clinvar pathogenic snv splice count (#1)")], as.numeric))
+    temp[is.na(temp)] <- 0
+    r6 <- (functional.1 | functional.2) & (temp > 0)
+    
+    #inclusion rule 7:
+    suppresswarnings(temp <- sapply(data[normalized.name("clinvar pathogenic snv nonsense count (#1)")], as.numeric))
+    temp[is.na(temp)] <- 0
+    r7 <- (functional.1 | functional.2) & (temp > 0)
+
+    #inclusion rule 8:
+    suppresswarnings(temp <- sapply(data[normalized.name("clinvar pathogenic cnv count (#1)")], as.numeric))
+    temp[is.na(temp)] <- 0
+    r8 <- (functional.1 | functional.2) & (temp > 0)
+    
+  } else {
+    #check for correct columns
+    columns <- c("hgmd variant class","hgmd flanking count","clinvar flanking count","clinvar clinical significance","function","clingen haploinsufficiencydesc","clinvar pathogenic indel count", "clinvar pathogenic cnv count", "clinvar pathogenic snv splice count", "clinvar pathogenic snv nonsense count")
+    
+    #make sure all columns are present
+    stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
+   
+    #inclusion rule 1: 
+    r1 <- sapply(data[normalized.name("hgmd variant class")], as.character)
+    r1 <- sapply(r1, function(x) length(grep("dm",x)) > 0)
+    
+    #inclusion rule 2:
+    suppresswarnings(temp1 <- sapply(data[normalized.name("hgmd flanking count")], as.numeric))
+    temp1[is.na(temp1)] <- 0
+    
+    suppresswarnings(temp2 <- sapply(data[normalized.name("clinvar flanking count")], as.numeric))
+    temp2[is.na(temp2)] <- 0
+    r2 <- temp1 > 0 | temp2 > 0
+    
+    #inclusion rule 3:
+    temp <- sapply(data[normalized.name("clinvar clinical significance")], as.character)
+    r3 = (temp == "pathogenic") | (temp == "likely pathogenic") | (temp == "likely pathogenic;pathogenic")
+    
+    functional <- Filter.by.function(sapply(data[normalized.name("function")], as.character))
+  
+    #inclusion rule 4:
+    r4 <- functional & (!eval(parse(text=paste0("data$",normalized.name("clingen haploinsufficiencydesc")))) %in% c("na","no evidence","little evidence"))
+    
+    #inclusion rule 5:
+    suppresswarnings(temp <- sapply(data[normalized.name("clinvar pathogenic indel count")], as.numeric))
+    temp[is.na(temp)] <- 0
+    r5 <- functional & (temp > 0)
+    
+    #inclusion rule 6:
+    suppresswarnings(temp <- sapply(data[normalized.name("clinvar pathogenic snv splice count")], as.numeric))
+    temp[is.na(temp)] <- 0
+    r6 <- functional & (temp > 0)
+    
+    #inclusion rule 7:
+    suppresswarnings(temp <- sapply(data[normalized.name("clinvar pathogenic snv nonsense count")], as.numeric))
+    temp[is.na(temp)] <- 0
+    r7 <- functional & (temp > 0)  
+
+    #inclusion rule 8:
+    suppresswarnings(temp <- sapply(data[normalized.name("clinvar pathogenic cnv count")], as.numeric))
+    temp[is.na(temp)] <- 0
+    r8 <- functional & (temp > 0)  
+
+  }
+  
+  r.all <- r1 | r2 | r3 | r4 | r5 | r6 | r7 | r8
+  data <- data[r.all,]
   data
 }
