@@ -162,8 +162,8 @@ if(opt$pheno != "NULL"){
     for(i in 1:dim(sum)[1]){
         samp <- sum[i,1]
         sampPheno <- pheno[which(pheno$CHGVID == samp),]$DetailedPhenotype
-        if(sampPheno == "NULL" || sampPheno == ""){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype}
-        if(sampPheno == "NULL" || sampPheno == ""){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype}
+        if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype}
+        if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype}
         sum[i,12] <- as.vector(sampPheno)
     }
 }

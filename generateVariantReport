@@ -247,7 +247,8 @@ samp.dnm.tierOne <- dnm[which(dnm$Child==samp),]
 samp.hom.tierOne <- hom[which(hom$Child==samp),]
 samp.hem.tierOne <- hem[which(hem$Child==samp),]
 samp.chet.tierOne <- chet[which(chet$Child==samp),]
-if(opt$summary){writeSummary(samp.dnm.tierOne,samp.hom.tierOne,samp.hem.tierOne,samp.chet.tierOne,dirname(opt$out))}
+samp.tierTwo <- tier2[which(tier2$Child==samp),]
+if(opt$summary){writeSummary(samp.dnm.tierOne,samp.hom.tierOne,samp.hem.tierOne,samp.chet.tierOne,samp.tierTwo,dirname(opt$out))}
 
 #HZ OMIM
 samp.dnm.hzo <- samp.dnm.tierOne[which((samp.dnm.tierOne$Polyphen.Humvar.Score >= .95  | 
@@ -405,9 +406,9 @@ if(opt$pheno != "NULL"){
     for(i in 1:dim(sum)[1]){
         samp <- sum[i,1]
         sampPheno <- pheno[which(pheno$CHGVID == samp),]$DetailedPhenotype
-        if(sampPheno == "NULL" || sampPheno == ""){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype}
-        if(sampPheno == "NULL" || sampPheno == ""){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype}
-        sum[i,12] <- as.vector(sampPheno)
+        if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype}
+        if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype}
+        sum[i,13] <- as.vector(sampPheno)
     }
 }
 
