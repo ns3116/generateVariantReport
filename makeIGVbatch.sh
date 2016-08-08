@@ -8,7 +8,7 @@ awk '{print $2"\n"$3"\n"$4}' <(sed '1d' $IN) |uniq > $(dirname $IN)/$(basename $
 
 while read line; do  
     tmp=$(find \
-        $(mysql --defaults-group-suffix=seqdb --defaults-file=/nfs/goldstein/software/annodb/.my.cnf -e "select AlignSeqFileLoc from seqdbClone where CHGVID = '$line' ;" |head -n2|tail -n1) \
+        $(mysql --defaults-group-suffix=seqdb --defaults-file=/nfs/goldstein/software/Bioinformatics_Tools/generateVariantReport/.my.cnf -e "select AlignSeqFileLoc from seqdbClone where CHGVID = '$line' ;" |head -n2|tail -n1) \
         -name '*final.bam')
 
     if [ -z "${tmp//\/\//\/}" ]
