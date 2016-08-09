@@ -61,7 +61,7 @@ opt_parser = OptionParser(option_list=option_list)
 opt = parse_args(opt_parser)
 
 #read csv file as dataframe for dnm, chet, and add_anno, and MGI essential gene list
-source(paste(scriptPath,"/filters_nontrio.R",sep=""))
+source(paste(scriptPath,"/r0.3_filters_nontrio.R",sep=""))
 
 MGIe <- read.table(opt$MGIe,header=T)
 
@@ -186,14 +186,15 @@ colname_border <- Border(color="black",position="BOTTOM",pen="BORDER_THICK")
 CB.setBorder(cellBlock,colname_border,1,1:dim(sum)[2])
 
 setRowHeight(getRows(sum.sheet,1),1,multiplier=3)
-for(col in c(1,13)){
+for(col in c(1)){
     setColumnWidth(sum.sheet,col,14)
 }
-for(col in c(8:12)){
+setColumnWidth(sum.sheet,12,24)
+for(col in c(8:11)){
     setColumnWidth(sum.sheet,col,11)
 }
 for(col in c(2:6)){
-    setColumnWidth(sum.sheet,col,5)
+    setColumnWidth(sum.sheet,col,6)
 }
 redFill <- Fill(foregroundColor = "red", backgroundColor = "red")
 
@@ -205,6 +206,9 @@ for(col in c(7:11)){
 #CB.setFill(cellBlock, redFill, ind, 8)
 grayFill <- Fill(foregroundColor = "gray")
 CB.setFill(cellBlock, grayFill, 1,7:dim(sum)[2])
+smallFont <- Font(outwb,heightInPoints=10)
+CB.setFont(cellBlock, smallFont, 2:dim(sum)[1],12)
+CB.setFont(cellBlock, smallFont, 1, 2:6)
 
 excelColumn<- function(num){
     name <- "" 
