@@ -262,6 +262,7 @@ Filter.for.homozygous <- function(data) {
                "ExAC fin maf","ExAC nfe maf","ExAC oth maf","Minor Hom Ctrl",
                "Evs All Genotype Count", "ExAC global gts")
 
+  if (dim(data)[1] ==0) { return(data)}
   #make sure all columns are present
   stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
 
@@ -388,6 +389,7 @@ Filter.for.hemizygous <- function(data) {
   #make sure all columns are present
   stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
 
+  if (dim(data)[1] ==0) { return(data)}
   #step 1:
   data   <- data[is.na(data[normalized.name("Percent Read Alt (child)")])
                  | data[normalized.name("Percent Read Alt (child)")] > 0.8,]
@@ -510,6 +512,7 @@ Filter.for.denovo <- function(data) {
                "Samtools Raw Coverage (father)","QC Fail Ctrl","QC Fail Ctrl","Ctrl MAF",
                "Evs All Genotype Count","ExAC global gts")
 
+  if (dim(data)[1] ==0) { return(data)}
   #make sure all columns are present
   stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
 
@@ -665,6 +668,7 @@ Filter.by.Function <- function(x) {
 }
 
 Filter.by.HemiHomo.Count <- function(data,threshold,is.comphet = FALSE) {
+  if (dim(data)[1] ==0) { return(data)}
   #Get IGM genotype count
   if (is.comphet) {
     stopifnot(length(which(colnames(data) == normalized.name("Major Hom Ctrl (#1)")))>0)
@@ -751,7 +755,7 @@ Filter.for.tier2 <- function(data, is.comphet = FALSE) {
     columns <- c("HGMD Class (#1)","HGMD Class (#2)", "HGMD indel 9bpflanks (#1)", "HGMD indel 9bpflanks (#2)",
                  "ClinVar pathogenic indels (#1)", "ClinVar pathogenic indels (#2)", "ClinVar Clinical Significance (#1)", "ClinVar Clinical Significance (#2)",
                  "Function (#1)", "Function (#2)", "ClinGen (#1)", "ClinVar Pathogenic Indel Count (#1)", "Clinvar Pathogenic CNV Count (#1)", "ClinVar Pathogenic SNV Splice Count (#1)", "ClinVar Pathogenic SNV Nonsense Count (#1)")
-
+    if (dim(data)[1] ==0) { return(data)}
     #make sure all columns are present
     stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
 
@@ -818,6 +822,7 @@ Filter.for.tier2 <- function(data, is.comphet = FALSE) {
     #make sure all columns are present
     stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
 
+    if (dim(data)[1] ==0) { return(data)}
     #inclusion rule 1:
     R1 <- sapply(data["HGMD.Class"], as.character)
     R1 <- sapply(R1, function(x) length(grep("DM",x)) > 0)
