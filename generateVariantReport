@@ -453,7 +453,7 @@ ind <- which(sum[,8] != "")
 CB.setFill(cellBlock, redFill, ind, 8)
 grayFill <- Fill(foregroundColor = "gray")
 CB.setFill(cellBlock, grayFill, 1,6:dim(sum)[2])
-CB.setFont(cellBlock, smallFont, 1:dim(sum)[2]+1,13)
+CB.setFont(cellBlock, smallFont, 2:dim(sum)[1],13)
 CB.setFont(cellBlock, smallFont, 1, 2:5)
 #for(col in c(2:5)){
 #    CB.setFont(cellBlock,0,col)
