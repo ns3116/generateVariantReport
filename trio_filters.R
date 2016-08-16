@@ -53,6 +53,8 @@ Filter.for.compound.heterozygote <- function(data) {
   #make sure all columns are present
   stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
 
+  
+  if (dim(data)[1] ==0) { return(data)}
   #step 1:
   data   <- data[is.na(data[normalized.name("Var Ctrl Freq #1 & #2 (co-occurance)")])
                  | data[normalized.name("Var Ctrl Freq #1 & #2 (co-occurance)")] == 0,]
@@ -185,9 +187,9 @@ Filter.for.compound.heterozygote <- function(data) {
           not.done <- (genotype.count[3] == "0") & (length(grep("^0",genotype.count[4])) >0)
         }
       }
-    }
-    if (not.done) { #the last condition has been checnke
-      Index[i] <- TRUE
+        if (not.done) { #the last condition has been checnke
+          Index[i] <- TRUE
+      }
     }
   }
   data <- data[Index,]
@@ -238,9 +240,9 @@ Filter.for.compound.heterozygote <- function(data) {
           not.done <- (genotype.count[3] == "0") & (length(grep("^0",genotype.count[4])) >0)
         }
       }
-    }
-    if (not.done) { #the last condition has been checnke
-      Index[i] <- TRUE
+        if (not.done) { #the last condition has been checnke
+          Index[i] <- TRUE
+      }
     }
   }
   data <- data[Index,]
@@ -367,9 +369,9 @@ Filter.for.homozygous <- function(data) {
           not.done <- (genotype.count[3] == "0") & (length(grep("^0",genotype.count[4])) >0)
         }
       }
-    }
-    if (not.done) { #the last condition has been checnke
-      Index[i] <- TRUE
+        if (not.done) { #the last condition has been checnke
+          Index[i] <- TRUE
+      }
     }
   }
   data <- data[Index,]
@@ -495,9 +497,9 @@ Filter.for.hemizygous <- function(data) {
           not.done <- (genotype.count[3] == "0") & (length(grep("^0",genotype.count[4])) >0)
         }
       }
-    }
-    if (not.done) { #the last condition has been checnke
-      Index[i] <- TRUE
+        if (not.done) { #the last condition has been checnke
+          Index[i] <- TRUE
+      }
     }
   }
   data <- data[Index,]
@@ -819,6 +821,7 @@ Filter.for.tier2 <- function(data, is.comphet = FALSE) {
                  "ClinVar.Clinical.Significance", "Function", "ClinGen",
                  "ClinVar.Pathogenic.Indel.Count", "Clinvar.Pathogenic.CNV.Count", "ClinVar.Pathogenic.SNV.Splice.Count", "ClinVar.Pathogenic.SNV.Nonsense.Count")
 
+    if (dim(data)[1] ==0) { return(data)}
     #make sure all columns are present
     stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
 
