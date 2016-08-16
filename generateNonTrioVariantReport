@@ -53,6 +53,7 @@ option_list = list(
     make_option(c("-m","--mgi"), type="character", default=paste(scriptPath,"/MGI_essential.txt",sep=""), help="MGI essiential gene list [default  = <Script Path>/MGI_essential.txt]", dest="MGIe"),
     make_option(c("-s","--summary"), type="logical", default=F, action="store_true", help="Flag to generate individual sample text summaries [default  = False"),
     make_option(c("-p","--pheno"), type="character", default="NULL", help="seqDB file containing sample phenotypes [default  = NULL]"),
+    make_option(c("-f","--filter"), type="integer", default="5", help="Number of control alleles allowed by the filter [default  = 5]"),
     make_option(c("-n","--nontrio"), type="logical", default=F, action="store_true", help="Flag to process files as a non-trio, imposing additional filters to the tier one rules [default  = False]")
     )
     #make_option(c("-r","--raw"), type="character", default="atav_summary.xlsx", help="ATAV raw output summary excel [default = atav_summary.xlsx")
@@ -81,13 +82,13 @@ input.data <- input.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(input
 data <- Filter.by.Allele.Count(input.data,0)
 kv <- Filter.for.tier2.pdnm.kv(data)
 write.csv(kv, file = "kv.csv")
-data <- Filter.by.Allele.Count(input.data,4)
+data <- Filter.by.Allele.Count(input.data,opt$filter)
 kv5 <- Filter.for.tier2.pdnm.kv(data)
 write.csv(kv, file = "kv5.csv")
 kv5 <- kv5[which(!(paste(kv5$Sample.Name,kv5$Variant.ID) %in% paste(kv$Sample.Name,kv$Variant.ID))),]
 
 #DNM LoF
-data <- Filter.by.Allele.Count(input.data,4)
+data <- Filter.by.Allele.Count(input.data,opt$filter)
 pdnm <- Filter.for.tier2.pdnm.lof(data)
 write.csv(pdnm, file = "pdnm_lof.csv")
 
@@ -95,7 +96,7 @@ pchet <- pdnm[which(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep="")) 
 pdnm <- pdnm[which(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep="")) %in% names(table(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep="")))[which(table(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep=""))) == 1)])), ]
 
 #REC KV LoF
-data <- Filter.by.Allele.Count(input.data,4)
+data <- Filter.by.HemiHomo.Count(input.data,0)
 prec <- Filter.for.tier2.prec.kv.lof(data)
 write.csv(prec, file = "pREC_KV_LoF.csv")
 
@@ -169,7 +170,7 @@ if(opt$pheno != "NULL"){
 }
 #Write Excel file
 
-sum <- rbind(c("diagseq","pDNM KV","pDNM KV5","T2 pDNM LoF","T2 pRec LoF","T2 pCHET LoF","pDNM KnownVar","pDNM KnownVar (<5 Alleles)","Tier 2 pDNM LoF","Tier 2 pRec LoF","Tier 2 pCHET LoF","Phenotype"),sum)
+sum <- rbind(c("diagseq","pDNM KV",paste0("pDNM KV",opt$filter),"T2 pDNM LoF","T2 pRec LoF","T2 pCHET LoF","pDNM KnownVar",paste0("pDNM KnownVar (<",opt$filter," Alleles)"),"Tier 2 pDNM LoF","Tier 2 pRec LoF","Tier 2 pCHET LoF","Phenotype"),sum)
 
 cellBlock <- CellBlock(sum.sheet,1,1,dim(sum)[1],dim(sum)[2])
 colnames_style <- CellStyle(outwb) + Font(outwb,isBold=T) + Alignment(horizontal="ALIGN_CENTER",vertical="VERTICAL_CENTER")
