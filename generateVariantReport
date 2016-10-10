@@ -74,6 +74,7 @@ option_list = list(
     make_option(c("-m","--mgi"), type="character", default=paste(scriptPath,"/MGI_essential.txt",sep=""), help="MGI essiential gene list [default  = <Script Path>/MGI_essential.txt]", dest="MGIe"),
     make_option(c("-s","--summary"), type="logical", default=F, action="store_true", help="Flag to generate individual sample text summaries [default  = False"),
     make_option(c("-p","--pheno"), type="character", default="NULL", help="seqDB file containing sample phenotypes [default  = NULL]"),
+    make_option(c("--nochet"), type="logical", default=F, action="store_true", help="Flag to process files as a non-trio, imposing additional filters to the tier one rules [default  = False]"),
     make_option(c("-n","--nontrio"), type="logical", default=F, action="store_true", help="Flag to process files as a non-trio, imposing additional filters to the tier one rules [default  = False]")
     )
     #make_option(c("-r","--raw"), type="character", default="atav_summary.xlsx", help="ATAV raw output summary excel [default = atav_summary.xlsx")
@@ -146,7 +147,9 @@ if(opt$nontrio){
 hom <- cbind(hom, HGVSg(hom))
 write.csv(hom, file = "homozygous.csv")
 
-if(opt$nontrio){chet<-dnm.data[which(dnm.data$Genotype == "empty"),]
+if(opt$nontrio | opt$nochet){
+    chet<-dnm.data[which(dnm.data$Genotype == "empty"),]
+    tier2.chet<-dnm.data[which(dnm.data$Genotype == "empty"),]
 }else{
 #Filtering CHET and merging additional annotations to table for both variants
 chet.data = read.csv(opt$cmphet,na.strings="NA") 
@@ -232,7 +235,7 @@ LoF_var <- c(
 )
 
 #Create Summary Table
-for(samp in unique(c(as.vector(dnm$Child),as.vector(hem$Child),as.vector(hom$Child),as.vector(chet$Child)))){
+for(samp in unique(c(as.vector(dnm$Child),as.vector(hem$Child),as.vector(hom$Child),as.vector(chet$Child),as.vector(tier2$Child)))){
 
 Ndnm <- length(which(dnm$Child==samp))
 Nhem <- length(which(hem$Child==samp))
@@ -249,6 +252,11 @@ samp.hem.tierOne <- hem[which(hem$Child==samp),]
 samp.chet.tierOne <- chet[which(chet$Child==samp),]
 samp.tierTwo <- tier2[which(tier2$Child==samp),]
 if(opt$summary){writeSummary(samp.dnm.tierOne,samp.hom.tierOne,samp.hem.tierOne,samp.chet.tierOne,samp.tierTwo,dirname(opt$out))}
+#Add new variant/genotype type
+samp.dnm.tierOne$Gene.Name <- lapply(samp.dnm.tierOne$Gene.Name,function(x){paste0(gsub("'","",x),"(DN)")})
+samp.hom.tierOne$Gene.Name <- lapply(samp.hom.tierOne$Gene.Name,function(x){paste0(gsub("'","",x),"(HO)")})
+samp.hem.tierOne$Gene.Name <- lapply(samp.hem.tierOne$Gene.Name,function(x){paste0(gsub("'","",x),"(HE)")})
+samp.chet.tierOne$Gene.Name <- lapply(samp.chet.tierOne$Gene.Name,function(x){paste0(gsub("'","",x),"(CH)")})
 
 #HZ OMIM
 samp.dnm.hzo <- samp.dnm.tierOne[which((samp.dnm.tierOne$Polyphen.Humvar.Score >= .95  | 
@@ -396,14 +404,15 @@ sum <- rbind(sum,c(samp,Ndnm,Nhem,Nhom,Nchet,"",paste(samp.hze,collapse="\n"),pa
 }
 
 #Add in samples with no tier1/2 variants
-samps <- unique(dnm.data$Sample.Name)
+samps <- unique(dnm.data$Child)
 for(samp in samps[!samps %in% sum[,1]]){
-    sum <- rbind(sum,c(samp,"0","0","0","0","0","","","","","","","","",""))
+    sum <- rbind(sum,c(samp,"0","0","0","0","0","","","","","","","","","",""))
 }
 sum <- sum[order(gsub(".*(f[0-9]*)","\\1",sum[,1])),]
 
 if(opt$pheno != "NULL"){
     pheno <- read.csv(opt$pheno)
+    if(is.null(dim(sum))){sum <- t(as.matrix(sum))}
     for(i in 1:dim(sum)[1]){
         samp <- sum[i,1]
         sampPheno <- pheno[which(pheno$CHGVID == samp),]$DetailedPhenotype
@@ -438,7 +447,7 @@ for(col in c(1,14,15,16)){
 }
 setColumnWidth(sum.sheet,13,24)
 for(col in c(7:12)){
-    setColumnWidth(sum.sheet,col,11)
+    setColumnWidth(sum.sheet,col,12)
 }
 for(col in c(2:6)){
     setColumnWidth(sum.sheet,col,5)
