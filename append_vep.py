@@ -220,10 +220,10 @@ def doVEP(fl):
 	if options.forceoverwrite or not options.vep:
 	    vep_call.append('--force_overwrite')
 
-	#try:
-	#    p = subprocess.check_output(vep_call)
-	#except subprocess.CalledProcessError as e:
-	#    raise EnvironmentError("could not run perl VEP script")
+	try:
+	    p = subprocess.check_output(vep_call)
+	except subprocess.CalledProcessError as e:
+	    raise EnvironmentError("could not run perl VEP script")
 
         f = open(out_path)
         lines = f.readlines()
