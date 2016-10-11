@@ -109,7 +109,7 @@ class Variant(object):
         return False
 
     def setfreq(self, n, d):
-	self.freq = "%i : %i" % ( n , d )
+        self.freq = "=\"%s/%s\"" % ( n , d )
 
     def compare (var1, var2):
         """
@@ -291,10 +291,10 @@ def makeOutput(arg, highest):
     header = csvRow(header)
 
     cols = 4 # number of columns of output
-    header.append('VEP function')
-    header.append('hgvsc')
-    header.append('hgvsp')
-    header.append('consequence transcripts:gene transcripts')
+    header.append('VEP Function')
+    header.append('HGVScc')
+    header.append('HGVSp')
+    header.append('#Transcripts')
 
     rows = [csvRow(header)]
     for row in reader:
