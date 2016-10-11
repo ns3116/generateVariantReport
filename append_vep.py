@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/nfs/goldstein/software/python2.7.7/bin/python
 
 # append_vep.py
 
@@ -8,6 +8,8 @@ import subprocess
 from tempfile import mkdtemp, mkstemp
 import csv
 import os
+from collections import defaultdict
+import pdb
 
 parser = OptionParser()
 parser.add_option("-i", "--atav_file",
@@ -39,29 +41,16 @@ class Variant(object):
                '3_prime_UTR_variant', '5_prime_UTR_variant', 'mature_miRNA_variant', 'coding_sequence_variant',
                'synonymous_variant', 'stop_retained_variant', 'incomplete_terminal_codon_variant',
                'splice_region_variant', 'protein_altering_variant', 'missense_variant', 'inframe_deletion',
-               'inframe_insertion', 'transcript_amplification', 'start_lost', 'stop_lost', 'frameshift_variant',
+               'inframe_insertion', 'transcript_amplification', 'initiator_codon_variant',
+               'start_lost', 'stop_lost', 'frameshift_variant',
                'stop_gained', 'splice_donor_variant', 'splice_acceptor_variant', 'transcript_ablation']
     ties = []
     def __init__(self, ln):
         ln = ln.strip().split('\t')
         self.line=ln
 
-	id_ =  ln[0]
-	id_ = id_.split("_")
-	id_ += id_[-1].split('/')
-	self.chrom = id_[0]
-	self.pos = id_[1]
-	self.ref = id_[-2]
-	self.alt = id_[-1]
+        self.id_ =  ln[0]
 
-	self.position = ln[1][ ln[1].find(':')+1: ]
-	if '-' in self.position:
-	    self.position = self.position.split('-')
-	    self.position = range( int(self.position[0]), int(self.position[-1]) + 1 )
-	else:
-	    self.position = [int(self.position)]
-
-        self.allele = ln[2]
         self.gene = ln[3]
         self.feature = ln[4]
         self.feature_type = ln[5]
@@ -85,7 +74,7 @@ class Variant(object):
                 if not options.mute:
                     raise Warning ('Encountered un-indexed consequence: %s' % (self.con) )
         self.sev_con = Variant.eff_key.index(h)
-	self.con = h
+        self.con = h
 
     def find_polyphen(self, lst):
         """returns PolyPhen score of Variant
@@ -106,9 +95,9 @@ class Variant(object):
         hgvsc, hgvsp = None, None
         for field in lst:
             if 'hgvsc=' == field.lower()[:6]:
-                hgvsc= field[7:]
+                hgvsc= field[6:]
             if 'hgvsp=' == field.lower()[:6]:
-                hgvsp= field[7:]
+                hgvsp= field[6:]
         return hgvsc, hgvsp
 
     def find_ccds(self, lst):
@@ -162,14 +151,14 @@ class Variant(object):
     def same_pos(self, other):
 	if other.chrom != self.chrom:
 	    return False
-	
+
 	elif len(self.position) == 1 and len(other.position) == 1:
 	    if self.position == other.position:
 		return True
 	    return False
 	else:
 	    return not set(self.position).isdisjoint(set(other.position))
-	
+
 
 class csvRow(list):
     """A list which can be written directly to a csv file"""
@@ -218,22 +207,23 @@ def doVEP(fl):
 
     lin = [v.split('-') for v in variantids]
     try:
-        for var in lin:
-            out_form = var[0] + '\t' + var[1] + '\t' + '.' + '\t' + var[2] + '\t' + var[3] + '\n'
+        for v in variantids:
+            var = v.split('-')
+            out_form = var[0] + '\t' + var[1] + '\t' + v + '\t' + var[2] + '\t' + var[3] + '\n'
             os.write(inp, out_form)
 
 	vep_call = ["perl", "/nfs/goldstein/goldsteinlab/software/variant_effect_predictor_74/variant_effect_predictor.pl",
-                                 "-i", inp_path, "--dir", "/nfs/goldstein/goldsteinlab/software/variant_effect_predictor_74",
+                                 "-i", inp_path, "--format", "vcf", "--dir", "/nfs/goldstein/goldsteinlab/software/variant_effect_predictor_74",
                                  "-o", out_path, "--ccds", " --protein", "--domains", "--polyphen=s", "--sift=b", "--symbol",
                                  "--numbers",  "--hgvs", "--canonical",  "--cache", "--offline", "--fasta",
                                  "/nfs/goldsteindata/refDB/HS_Build37/BWA_INDEX_hs37d5/hs37d5.fa"]
 	if options.forceoverwrite or not options.vep:
 	    vep_call.append('--force_overwrite')
 
-	try:
-	    p = subprocess.check_output(vep_call)
-	except subprocess.CalledProcessError as e:
-	    raise EnvironmentError("could not run perl VEP script")
+	#try:
+	#    p = subprocess.check_output(vep_call)
+	#except subprocess.CalledProcessError as e:
+	#    raise EnvironmentError("could not run perl VEP script")
 
         f = open(out_path)
         lines = f.readlines()
@@ -243,17 +233,18 @@ def doVEP(fl):
 	if options.vep is None:
 	    os.remove(out_path)
 
-    variants = []
+    variants = defaultdict(list)
     for l in lines:
 	if l[0] == '#':
 	    continue
 	else:
-	    variants.append(Variant(l))
+	    lineVariant = Variant(l)
+        variants[lineVariant.id_].append(lineVariant)
 
     for i in range(len(variantids)):
 	a = variantids[i].split('-')[:-2]
 	variantids[i] = ( a[0] , int(a[1]) )
-    
+
     return variants, variantids
 
 
@@ -274,45 +265,21 @@ def readVEP(variants, atavids):
         col3 is n/d for each variant (hence it will always be half the size of hgvs)
             where n is the number of transcripts of the top gene that have the most damaging consequence
             and d is the number the number of transcripts in the gene"""
-   
+
     highest = {}
-    h = variants[0]
-    like = [h]
 
-    for i in range(1, len(variants)):
-        variant = variants[i]
+    for varid, variant_cons in variants.iteritems():
+        h = variant_cons[0]
+        for variant in variant_cons:
+            h = Variant.compare(h, variant)
 
-	a = h.same_pos(variant)
+        highest[ h.id_ ] = h
+        n = sum(1 for v in variant_cons if Variant.eff_key[h.sev_con] in v.consequences
+                and h.gene == v.gene and v.feature_type == 'Transcript')
+        d = sum(1 for v in variant_cons if h.gene == v.gene and v.feature_type == 'Transcript')
+        h.setfreq(n , d)
 
-        if a:
-	    h = Variant.compare(h, variant)
-            like.append(variant)
-        elif not a or i == len(variants) - 1:
-            highest[ (h.chrom, h.position[0], h.position[-1]) ] = h
-            n = sum(1 for v in like if Variant.eff_key[h.sev_con] in v.consequences
-                    and h.gene == v.gene and v.feature_type == 'Transcript')
-            d = sum(1 for v in like if h.gene == v.gene and v.feature_type == 'Transcript')
-	    h.setfreq(n , d)
-	    h = variant
-	    like = [h]
-	    if i == len(variants) - 1:
-		highest[ (h.chrom, h.position[0], h.position[-1] ) ] = h
-		h.setfreq( 1, 1 )
-
-    def allign_vep( varDict, ids, tol):
-	writelist = []
-	for var in ids:
-	    for key in varDict.keys():
-	        if var[0] == key[0] and var[1] >= key[1] - tol and var[1] <= key[2] + tol:
-		    writelist.append(varDict[key])
-		    break
-	return writelist
-
-    towrite = allign_vep( highest , atavids , 1)
-    if len(atavids) != len(towrite):
-	raise IOError("ERROR: vep output could not be matched with input variants")
-
-    return towrite
+    return highest
 
 
 def makeOutput(arg, highest):
@@ -320,40 +287,25 @@ def makeOutput(arg, highest):
 
     # first make header
     header = reader.next().strip().split(',')
-    tar_cols = sum( 1 for cell in header if 'variant id' in cell.lower())
+    id_col = [col_num for col_num,cell in enumerate(header) if cell.lower() == "variant id"][0]
     header = csvRow(header)
 
-    cols = 3 # number of columns of output
+    cols = 4 # number of columns of output
+    header.append('VEP function')
     header.append('hgvsc')
     header.append('hgvsp')
     header.append('consequence transcripts:gene transcripts')
 
-    # add numbering if necessary
-    if tar_cols > 1:
-        for e in range (1, tar_cols+1):
-            for i in range(cols):
-                header.append(header[-(cols*e)] + ' (#%d)' % (e))
-        del(header[-tar_cols*cols-cols:-tar_cols*cols])
-
-    # now convert the rest
     rows = [csvRow(header)]
-    i = 0
     for row in reader:
         row = row.strip().split(',')
         row = csvRow(row)
-
-        for c in range(tar_cols):
-	    transcript = highest[i * tar_cols + c]
-
-	    if transcript.feature in Variant.ties:
-		j = Variant.ties.index(transcript.feature)
-		raise Warning('Warning. Could not break tie involving canonical features %s and %s.' % ( transcript.feature , Variant.ties[j+1] ) )
-
-	    row.append(transcript.hgvsc)
-            row.append(transcript.hgvsp)
-            row.append(highest[i * tar_cols + c].freq)
+        transcript = highest[ row[id_col] ]
+        row.append(transcript.con)
+        row.append(transcript.hgvsc)
+        row.append(transcript.hgvsp)
+        row.append(transcript.freq)
         rows.append(row)
-        i += 1
     reader.close()
 
     return rows
@@ -372,7 +324,7 @@ def append_vep():
 
     if os.path.exists(options.output_) and not options.forceappend:
 	raise IOError( "Error: Append file " + options.output_ + " already exists. Specify a different output file with --append_file or overwrite existing file with --force_append.")
-		
+
     print " - Running VEP..."
     vep, atavids = doVEP(options.atav)
     print " - Reading VEP..."
@@ -384,7 +336,7 @@ def append_vep():
     if options.vep:
 	print " - Wrote stats to " + options.vep + "_summary.html"
     print " - Done!"
-	
+
 
 options, args = parser.parse_args()
 append_vep()
