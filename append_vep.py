@@ -9,6 +9,7 @@ from tempfile import mkdtemp, mkstemp
 import csv
 import os
 from collections import defaultdict
+from fnmatch import fnmatch
 import pdb
 
 parser = OptionParser()
@@ -109,7 +110,7 @@ class Variant(object):
         return False
 
     def setfreq(self, n, d):
-        self.freq = "=\"%s/%s\"" % ( n , d )
+        self.freq = "%s/%s" % ( n , d )
 
     def compare (var1, var2):
         """
@@ -187,7 +188,7 @@ def doVEP(fl):
     col = []
     header = reader.next()
     for cell in header:
-        if 'variant id' in cell.lower():
+        if fnmatch(cell.lower(),"*variant*id*"):
             col.append(header.index(cell))
     if col == None:
         raise NameError('No Variant ID Column Found in input.')
@@ -287,24 +288,41 @@ def makeOutput(arg, highest):
 
     # first make header
     header = reader.next().strip().split(',')
-    id_col = [col_num for col_num,cell in enumerate(header) if cell.lower() == "variant id"][0]
+    id_col = [col_num for col_num,cell in enumerate(header) if fnmatch(cell.lower(),"*variant*id*")]
     header = csvRow(header)
+    if header[-1] == '': del header[-1]
+    num = ""
+    if len(id_col) > 1: num = " (#1)"
 
     cols = 4 # number of columns of output
-    header.append('VEP Function')
-    header.append('HGVScc')
-    header.append('HGVSp')
-    header.append('#Transcripts')
+    header.append('VEP Function{}'.format(num))
+    header.append('HGVSc{}'.format(num))
+    header.append('HGVSp{}'.format(num))
+    header.append('#Transcripts{}'.format(num))
+
+    if len(id_col) == 2:
+        num = " (#2)"
+        header.append('VEP Function{}'.format(num))
+        header.append('HGVSc{}'.format(num))
+        header.append('HGVSp{}'.format(num))
+        header.append('#Transcripts{}'.format(num))
+
 
     rows = [csvRow(header)]
     for row in reader:
         row = row.strip().split(',')
         row = csvRow(row)
-        transcript = highest[ row[id_col] ]
+        transcript = highest[ row[id_col[0]].strip('"') ]
         row.append(transcript.con)
         row.append(transcript.hgvsc)
         row.append(transcript.hgvsp)
         row.append(transcript.freq)
+        if len(id_col) == 2:
+            transcript = highest[ row[id_col[1]].strip('"') ]
+            row.append(transcript.con)
+            row.append(transcript.hgvsc)
+            row.append(transcript.hgvsp)
+            row.append(transcript.freq)
         rows.append(row)
     reader.close()
 
