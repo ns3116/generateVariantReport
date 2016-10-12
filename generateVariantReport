@@ -86,11 +86,14 @@ opt = parse_args(opt_parser)
 source(paste(scriptPath,"/trio_filters.R",sep=""))
 
 MGIe <- read.table(opt$MGIe,header=T)
+system(paste0(scriptPath,"/append_vep.py -i ",opt$dnm," --append_file ",opt$dnm, ".vep --force_append"),wait=T)
 #Tier 1 filtering DNM 
 #Merging additional annotations to table
-dnm.data = read.csv(opt$dnm,na.strings="NA")
+dnm.data = read.csv(paste0(opt$dnm,".vep"),na.strings="NA")
 dnm.data <- cbind(dnm.data, gsub("'","",dnm.data$Gene.Name) %in% MGIe$Gene_symbol)
 colnames(dnm.data)[dim(dnm.data)[2]] <- "MGI.Essential"
+dnm.data <- cbind(dnm.data, paste0(dnm.data$Variant.ID,"\n",dnm.data$Flag,"\n",dnm.data$HGVSc,"\n",dnm.data$HGVSp,"\n",dnm.data$Samtools.Raw.Coverage..child.,"\n",dnm.data$Percent.Read.Alt..child.,"\n",dnm.data$Genotype.Qual.GQ..child.))
+colnames(dnm.data)[dim(dnm.data)[2]] <- "PGM.Info"
 col.id <- grep("Gene.Name",colnames(dnm.data))
 new.pos <- 3
 dnm.data <- dnm.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(dnm.data))[-(col.id-new.pos+1)])]
@@ -152,9 +155,14 @@ if(opt$nontrio | opt$nochet){
     tier2.chet<-dnm.data[which(dnm.data$Genotype == "empty"),]
 }else{
 #Filtering CHET and merging additional annotations to table for both variants
-chet.data = read.csv(opt$cmphet,na.strings="NA") 
+system(paste0(scriptPath,"/append_vep.py -i ",opt$cmphet," --append_file ",opt$cmphet, ".vep --force_append"),wait=T)
+chet.data = read.csv(paste0(opt$cmphet,".vep"),na.strings="NA") 
 chet.data <- cbind(chet.data, gsub("'","",chet.data$Gene.Name) %in% MGIe$Gene_symbol)
 colnames(chet.data)[dim(chet.data)[2]] <- "MGI.Essential"
+chet.data <- cbind(chet.data, paste0(chet.data$Variant.ID...1.,"\n",chet.data$Flag,"\n",chet.data$HGVSc...1.,"\n",chet.data$HGVSp...1.,"\n",chet.data$Samtools.Raw.Coverage..child....1.,"\n",chet.data$Percent.Alt.Read..child....1.,"\n99")) #,chet.data$Genotype.Qual.GQ..child....1.))
+colnames(chet.data)[dim(chet.data)[2]] <- "PGM.Info.1"
+chet.data <- cbind(chet.data, paste0(chet.data$Variant.ID...2.,"\n",chet.data$Flag,"\n",chet.data$HGVSc...2.,"\n",chet.data$HGVSp...2.,"\n",chet.data$Samtools.Raw.Coverage..child....2.,"\n",chet.data$Percent.Alt.Read..child....2.,"\n99")) #,chet.data$Genotype.Qual.GQ..child....2.))
+colnames(chet.data)[dim(chet.data)[2]] <- "PGM.Info.2"
 col.id <- grep("Gene.Name",colnames(chet.data))
 new.pos <- 3
 chet.data <- chet.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(chet.data))[-(col.id-new.pos+1)])]
