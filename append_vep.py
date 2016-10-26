@@ -10,6 +10,7 @@ import csv
 import os
 from collections import defaultdict
 from fnmatch import fnmatch
+import shutil
 import pdb
 
 parser = OptionParser()
@@ -221,10 +222,11 @@ def doVEP(fl):
 	if options.forceoverwrite or not options.vep:
 	    vep_call.append('--force_overwrite')
 
-	try:
-	    p = subprocess.check_output(vep_call)
-	except subprocess.CalledProcessError as e:
-	    raise EnvironmentError("could not run perl VEP script")
+	if len(variantids) > 0 :
+		try:
+		    p = subprocess.check_output(vep_call)
+		except subprocess.CalledProcessError as e:
+		    raise EnvironmentError("could not run perl VEP command\n{}".format(" ".join(vep_call)))
 
         f = open(out_path)
         lines = f.readlines()
