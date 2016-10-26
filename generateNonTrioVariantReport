@@ -84,15 +84,15 @@ kv <- Filter.for.tier2.pdnm.kv(data)
 write.csv(kv, file = "kv.csv")
 system(paste0(scriptPath,"/append_vep.py -i kv.csv --append_file kv.csv.vep --force_append"),wait=T)
 kv <- read.csv("kv.csv.vep",na.strings="NA")
-kv <- cbind(kv, paste0(kv$Variant.ID,"\nnonTrio\n",kv$HGVSc,"\n",kv$HGVSp,"\n",kv$Samtools.Raw.Coverage,"\n",kv$Percent.Alt.Read,"\n",kv$Genotype.Qual.GQ))
-colnames(kv)[dim(kv)[2]] <- "PGM.Info"
+if(dim(kv)[1]>0){kv <- cbind(kv, paste0(kv$Variant.ID,"\nnonTrio\n",kv$HGVSc,"\n",kv$HGVSp,"\n",kv$Samtools.Raw.Coverage,"\n",kv$Percent.Alt.Read,"\n",kv$Genotype.Qual.GQ))
+colnames(kv)[dim(kv)[2]] <- "PGM.Info"}
 data <- Filter.by.Allele.Count(input.data,opt$filter)
 kv5 <- Filter.for.tier2.pdnm.kv(data)
 write.csv(kv5, file = "kv5.csv")
 system(paste0(scriptPath,"/append_vep.py -i kv5.csv --append_file kv5.csv.vep --force_append"),wait=T)
 kv5 <- read.csv("kv5.csv.vep",na.strings="NA")
-kv5 <- cbind(kv5, paste0(kv5$Variant.ID,"\nnonTrio\n",kv5$HGVSc,"\n",kv5$HGVSp,"\n",kv5$Samtools.Raw.Coverage,"\n",kv5$Percent.Alt.Read,"\n",kv5$Genotype.Qual.GQ))
-colnames(kv5)[dim(kv5)[2]] <- "PGM.Info"
+if(dim(kv5)[1]>0){kv5 <- cbind(kv5, paste0(kv5$Variant.ID,"\nnonTrio\n",kv5$HGVSc,"\n",kv5$HGVSp,"\n",kv5$Samtools.Raw.Coverage,"\n",kv5$Percent.Alt.Read,"\n",kv5$Genotype.Qual.GQ))
+colnames(kv5)[dim(kv5)[2]] <- "PGM.Info"}
 kv5 <- kv5[which(!(paste(kv5$Sample.Name,kv5$Variant.ID) %in% paste(kv$Sample.Name,kv$Variant.ID))),]
 
 #DNM LoF
@@ -101,8 +101,8 @@ pdnm <- Filter.for.tier2.pdnm.lof(data)
 write.csv(pdnm, file = "pdnm_lof.csv")
 system(paste0(scriptPath,"/append_vep.py -i pdnm_lof.csv --append_file pdnm_lof.csv.vep --force_append"),wait=T)
 pdnm <- read.csv("pdnm_lof.csv.vep",na.strings="NA")
-pdnm <- cbind(pdnm, paste0(pdnm$Variant.ID,"\nnonTrio\n",pdnm$HGVSc,"\n",pdnm$HGVSp,"\n",pdnm$Samtools.Raw.Coverage,"\n",pdnm$Percent.Alt.Read,"\n",pdnm$Genotype.Qual.GQ))
-colnames(pdnm)[dim(pdnm)[2]] <- "PGM.Info"
+if(dim(pdnm)[1]>0){pdnm <- cbind(pdnm, paste0(pdnm$Variant.ID,"\nnonTrio\n",pdnm$HGVSc,"\n",pdnm$HGVSp,"\n",pdnm$Samtools.Raw.Coverage,"\n",pdnm$Percent.Alt.Read,"\n",pdnm$Genotype.Qual.GQ))
+colnames(pdnm)[dim(pdnm)[2]] <- "PGM.Info"}
 
 pchet <- pdnm[which(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep="")) %in% names(table(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep="")))[which(table(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep=""))) > 1)])),]
 pdnm <- pdnm[which(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep="")) %in% names(table(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep="")))[which(table(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep=""))) == 1)])), ]
@@ -113,8 +113,8 @@ prec <- Filter.for.tier2.prec.kv.lof(data)
 write.csv(prec, file = "prec_kv_lof.csv")
 system(paste0(scriptPath,"/append_vep.py -i prec_kv_lof.csv --append_file prec_kv_lof.csv.vep --force_append"),wait=T)
 prec <- read.csv("prec_kv_lof.csv.vep",na.strings="NA")
-prec <- cbind(prec, paste0(prec$Variant.ID,"\nnonTrio\n",prec$HGVSc,"\n",prec$HGVSp,"\n",prec$Samtools.Raw.Coverage,"\n",prec$Percent.Alt.Read,"\n",prec$Genotype.Qual.GQ))
-colnames(prec)[dim(prec)[2]] <- "PGM.Info"
+if(dim(prec)[1]>0){prec <- cbind(prec, paste0(prec$Variant.ID,"\nnonTrio\n",prec$HGVSc,"\n",prec$HGVSp,"\n",prec$Samtools.Raw.Coverage,"\n",prec$Percent.Alt.Read,"\n",prec$Genotype.Qual.GQ))
+colnames(prec)[dim(prec)[2]] <- "PGM.Info"}
 
 #Create workbook and sheets
 outwb <- createWorkbook()
