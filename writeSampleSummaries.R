@@ -64,7 +64,7 @@ writeCHET <- function(chet,rtf){
         if(!is.na(chet[i,]$HGMD.Class.1)){
             addText(rtf,paste0("This variant is listed as ",chet[i,]$HGMD.Class.1," in HGMD. "))}
         addText(rtf,"\n")
-        if(chet[i,]$Ctrl.MAF.2 == 0 & (chet[i,]$Evs.All.Maf.2 == 0 | is.na(chet[i,]$Evs.All.Maf.2)) & (chet[i,]$ExAC.global.maf.2 == 0 | is.na(dnm[i,]$ExAC.global.maf))){
+        if(chet[i,]$Ctrl.MAF.2 == 0 & (chet[i,]$Evs.All.Maf.2 == 0 | is.na(chet[i,]$Evs.All.Maf.2)) & (chet[i,]$ExAC.global.maf.2 == 0 | is.na(chet[i,]$ExAC.global.maf.2))){
             addText(rtf,"The second variant is absent from internal and external control samples. ")}
         else{addText(rtf,paste0("The second variant has a control MAF of ",chet[i,]$Ctrl.MAF.2*100,"% in IGM controls, ",chet[i,]$Evs.All.Maf.2*100,"% in EVS, and ",chet[i,]$ExAC.global.maf.2,"% in ExAC. "))}
         if(chet[i,]$Function.2 == "NON_SYNONYMOUS_CODING"){addText(rtf,paste0("It is a ",gsub("_"," ",chet[i,]$Polyphen.Humvar.Prediction.2)," missense variant with a PolyPhen2 score of ",chet[i,]$Polyphen.Humvar.Score.2,". "))}
