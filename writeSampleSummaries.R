@@ -109,7 +109,7 @@ writeNonTrioSummary <- function(samp.kv,samp.kv5,samp.pdnm,samp.prec,samp.pchet,
     if(dim(samp.pdnm)[1] > 0){writeDNM(samp.pdnm,rtf)}
     if(dim(samp.kv5)[1] > 0){writeDNM(samp.kv5,rtf)}
     if(dim(samp.prec)[1] > 0){writeDNM(samp.prec,rtf)}
-    if(dim(samp.pchet)[1] > 0){writeDNM(samp.chet,rtf)}
+    if(dim(samp.pchet)[1] > 0){writeDNM(samp.pchet,rtf)}
     done(rtf)
     return
 }
