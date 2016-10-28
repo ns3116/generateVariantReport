@@ -75,6 +75,7 @@ option_list = list(
     make_option(c("-s","--summary"), type="logical", default=F, action="store_true", help="Flag to generate individual sample text summaries [default  = False"),
     make_option(c("-p","--pheno"), type="character", default="NULL", help="seqDB file containing sample phenotypes [default  = NULL]"),
     make_option(c("--nochet"), type="logical", default=F, action="store_true", help="Flag to process files as a non-trio, imposing additional filters to the tier one rules [default  = False]"),
+    make_option(c("--noVEP"), type="logical", default=F, action="store_true", help="Flag to resuse existing VEP output files and skip running VEP [default  = False]"),
     make_option(c("-n","--nontrio"), type="logical", default=F, action="store_true", help="Flag to process files as a non-trio, imposing additional filters to the tier one rules [default  = False]")
     )
     #make_option(c("-r","--raw"), type="character", default="atav_summary.xlsx", help="ATAV raw output summary excel [default = atav_summary.xlsx")
@@ -88,7 +89,7 @@ source(paste(scriptPath,"/trio_filters.R",sep=""))
 MGIe <- read.table(opt$MGIe,header=T)
 ctrl_counts <- read.table(paste0(scriptPath,"/ctrl_counts/gene_counts.txt"),header=T)
 case_counts <- read.table(paste0(scriptPath,"/case_counts/gene_counts.txt"),header=T)
-system(paste0(scriptPath,"/append_vep.py -i ",opt$dnm," --append_file ",opt$dnm, ".vep --force_append"),wait=T)
+if(!opt$noVEP){system(paste0(scriptPath,"/append_vep.py -i ",opt$dnm," --append_file ",opt$dnm, ".vep --force_append"),wait=T)}
 #Tier 1 filtering DNM 
 #Merging additional annotations to table
 dnm.data = read.csv(paste0(opt$dnm,".vep"),na.strings="NA")
@@ -159,7 +160,7 @@ if(opt$nontrio | opt$nochet){
     tier2.chet<-dnm.data[which(dnm.data$Genotype == "empty"),]
 }else{
 #Filtering CHET and merging additional annotations to table for both variants
-system(paste0(scriptPath,"/append_vep.py -i ",opt$cmphet," --append_file ",opt$cmphet, ".vep --force_append"),wait=T)
+if(!opt$noVEP){system(paste0(scriptPath,"/append_vep.py -i ",opt$cmphet," --append_file ",opt$cmphet, ".vep --force_append"),wait=T)}
 chet.data = read.csv(paste0(opt$cmphet,".vep"),na.strings="NA") 
 chet.data <- cbind(chet.data, gsub("'","",chet.data$Gene.Name) %in% MGIe$Gene_symbol)
 colnames(chet.data)[dim(chet.data)[2]] <- "MGI.Essential"
