@@ -61,7 +61,7 @@ class Variant(object):
         # process whitespace-free string at the end of variant data
         jargon = ln[-1].strip().split(';')
         self.polyphen = self.find_polyphen(jargon)
-        self.hgvsc, self.hgvsp = self.find_hgvs(jargon)
+        self.hgvsc, self.hgvsp, self.exon = self.find_hgvs(jargon)
         self.ccds = self.find_ccds(jargon)
         self.canonical = False
         if 'canonical=' in str(jargon).lower():
@@ -94,13 +94,15 @@ class Variant(object):
 
             ex. if HGVSp not found
             returns (HGVSc, None)"""
-        hgvsc, hgvsp = None, None
+        hgvsc, hgvsp, exon = None, None, None
         for field in lst:
             if 'hgvsc=' == field.lower()[:6]:
                 hgvsc= field[6:]
             if 'hgvsp=' == field.lower()[:6]:
                 hgvsp= field[6:]
-        return hgvsc, hgvsp
+            if 'exon=' == field.lower()[:5]:
+                exon= field[5:]
+        return hgvsc, hgvsp, exon
 
     def find_ccds(self, lst):
         """returns a boolean representing whether the Variant has a CCDS
@@ -200,6 +202,8 @@ def doVEP(fl):
 	variantids += [row[c] for c in col]
     i.close()
 
+    variantids = list(set(variantids))
+
     if options.vep is None:
 	out, out_path = mkstemp()
     else:
@@ -221,7 +225,6 @@ def doVEP(fl):
                                  "/nfs/goldsteindata/refDB/HS_Build37/BWA_INDEX_hs37d5/hs37d5.fa"]
 	if options.forceoverwrite or not options.vep:
 	    vep_call.append('--force_overwrite')
-
 	if len(variantids) > 0 :
 		try:
 		    p = subprocess.check_output(vep_call)
@@ -278,8 +281,8 @@ def readVEP(variants, atavids):
 
         highest[ h.id_ ] = h
         n = sum(1 for v in variant_cons if Variant.eff_key[h.sev_con] in v.consequences
-                and h.gene == v.gene and v.feature_type == 'Transcript')
-        d = sum(1 for v in variant_cons if h.gene == v.gene and v.feature_type == 'Transcript')
+                and h.gene == v.gene and v.feature_type == 'Transcript' and v.ccds)
+        d = sum(1 for v in variant_cons if h.gene == v.gene and v.feature_type == 'Transcript' and v.ccds)
         h.setfreq(n , d)
 
     return highest
@@ -300,6 +303,7 @@ def makeOutput(arg, highest):
     header.append('VEP Function{}'.format(num))
     header.append('HGVSc{}'.format(num))
     header.append('HGVSp{}'.format(num))
+    header.append('Exon{}'.format(num))
     header.append('#Transcripts{}'.format(num))
 
     if len(id_col) == 2:
@@ -307,6 +311,7 @@ def makeOutput(arg, highest):
         header.append('VEP Function{}'.format(num))
         header.append('HGVSc{}'.format(num))
         header.append('HGVSp{}'.format(num))
+        header.append('Exon{}'.format(num))
         header.append('#Transcripts{}'.format(num))
 
 
@@ -318,12 +323,14 @@ def makeOutput(arg, highest):
         row.append(transcript.con)
         row.append(transcript.hgvsc)
         row.append(transcript.hgvsp)
+        row.append(transcript.exon)
         row.append(transcript.freq)
         if len(id_col) == 2:
             transcript = highest[ row[id_col[1]].strip('"') ]
             row.append(transcript.con)
             row.append(transcript.hgvsc)
             row.append(transcript.hgvsp)
+            row.append(transcript.exon)
             row.append(transcript.freq)
         rows.append(row)
     reader.close()
