@@ -174,6 +174,7 @@ for(samp in samps[!samps %in% sum[,1]]){
     sum <- rbind(sum,c(samp,"0","0","0","0","0","","","","","",""))
 }
 sum <- sum[order(gsub(".*(f[0-9]*)","\\1",sum[,1])),]
+if(is.null(dim(sum))){sum <- t(as.matrix(sum))}
 
 if(opt$pheno != "NULL"){
     pheno <- read.csv(opt$pheno)
