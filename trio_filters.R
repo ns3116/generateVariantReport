@@ -1,7 +1,7 @@
 #Script:	IGM Sequencing Clinic Tier 1 Philosopy post-ATAV Script
 #Version:	0.3
-#Designed:	Slavé Petrovski, David B. Goldstein
-#Developed:	Slavé Petrovski, Quanli Wang
+#Designed:	Nick Stong, Slavé Petrovski, David B. Goldstein
+#Developed:	Nick Stong, Slavé Petrovski, Quanli Wang
 #Last Update:	2016-07-01
 #Institute:	IGM (Institute for Genomic Medicine)
 
@@ -77,25 +77,27 @@ Filter.for.compound.heterozygote <- function(data) {
   if (dim(data)[1] ==0) { return(data)}
   
   #step 3:
-  Index <- grep("^SYNONYMOUS",data[normalized.name("Function (#1)")][,1])
+  Index <- which(grepl("^SYNONYMOUS",data[normalized.name("Function (#1)")][,1]) & (data[normalized.name("TraP Score (#1)")] < 0.4 | is.na(data[normalized.name("TraP Score (#1)")])))
   if (length(Index) >0) {
     data <- data[-Index,]
   }
   if (dim(data)[1] ==0) { return(data)}
   
-  Index <- grep("^INTRON_EXON",data[normalized.name("Function (#1)")][,1])
+  Index <- which(grepl("^INTRON_EXON",data[normalized.name("Function (#1)")][,1]) & (data[normalized.name("TraP Score (#1)")] < 0.4 | is.na(data[normalized.name("TraP Score (#1)")])))
   if (length(Index) >0) {
     data <- data[-Index,]
   }
   if (dim(data)[1] ==0) { return(data)}
   
-  Index <- grep("^SYNONYMOUS",data[normalized.name("Function (#2)")][,1])
+  Index <- which(grepl("^SYNONYMOUS",data[normalized.name("Function (#2)")][,1]) & (data[normalized.name("TraP Score (#2)")] < 0.4 | is.na(data[normalized.name("TraP Score (#2)")])))
+
   if (length(Index) >0) {
     data <- data[-Index,]
   }
   if (dim(data)[1] ==0) { return(data)}
   
-  Index <- grep("^INTRON_EXON",data[normalized.name("Function (#2)")][,1])
+  Index <- which(grepl("^INTRON_EXON",data[normalized.name("Function (#2)")][,1]) & (data[normalized.name("TraP Score (#2)")] < 0.4 | is.na(data[normalized.name("TraP Score (#2)")])))
+
   if (length(Index) >0) {
     data <- data[-Index,]
   }
@@ -293,13 +295,13 @@ Filter.for.homozygous <- function(data) {
   if (dim(data)[1] ==0) { return(data)}
   
   #step 4:
-  Index <- grep("^SYNONYMOUS",data$"Function")
+  Index <- which(grepl("^SYNONYMOUS",data$"Function") & (data$TraP.Score < 0.4 | is.na(data$TraP.Score)))
   if (length(Index) >0) {
     data <- data[-Index,]
   }
   if (dim(data)[1] ==0) { return(data)}
   
-  Index <- grep("^INTRON_EXON",data$"Function")
+  Index <- which(grepl("^INTRON_EXON",data$"Function") & (data$TraP.Score < 0.4 | is.na(data$TraP.Score)))
   if (length(Index) >0) {
     data <- data[-Index,]
   }
@@ -419,13 +421,13 @@ Filter.for.hemizygous <- function(data) {
   if (dim(data)[1] ==0) { return(data)}
   
   #step 4:
-  Index <- grep("^SYNONYMOUS",data$"Function")
+  Index <- which(grepl("^SYNONYMOUS",data$"Function") & (data$TraP.Score < 0.4 | is.na(data$TraP.Score)))
   if (length(Index) >0) {
     data <- data[-Index,]
   }
   if (dim(data)[1] ==0) { return(data)}
   
-  Index <- grep("^INTRON_EXON",data$"Function")
+  Index <- which(grepl("^INTRON_EXON",data$"Function") & (data$TraP.Score < 0.4 | is.na(data$TraP.Score)))
   if (length(Index) >0) {
     data <- data[-Index,]
   }
