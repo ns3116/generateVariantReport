@@ -134,6 +134,7 @@ hem <- dnm.data[which(dnm.data$Genotype == "empty"),]
 hem <- nonTrioToTrio(hem)
 }else{
 data <- Filter.by.Denovo.Flag(dnm.data,'NEWLY HEMIZYGOUS', strict = TRUE) 
+data <- rbind(data,Filter.by.Denovo.Flag(dnm.data,'COMPOUND DELETION', strict = TRUE))
 hem <- Filter.for.hemizygous(data)
 data <- Filter.by.HemiHomo.Count(data,9)
 tier2 <- rbind(tier2,Filter.for.tier2(data))

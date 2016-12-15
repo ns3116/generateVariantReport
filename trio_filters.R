@@ -17,6 +17,7 @@ Filter.by.Denovo.Flag <- function(data, type, strict = FALSE) {
   }
   # put NA rows back if any
   result = rbind(result,data[data["Denovo.Flag"] == "NA",])
+  return(result)
 }
 
 Filter.by.CompHet.Flag <- function(data, type, strict = FALSE) {
@@ -29,6 +30,7 @@ Filter.by.CompHet.Flag <- function(data, type, strict = FALSE) {
   }
   # put NA rows back if any
   result = rbind(result,data[data["Comp.Het.Flag"] == "NA",])
+  return(result)
 }
 
 normalized.name <- function(names) {
@@ -411,13 +413,20 @@ Filter.for.hemizygous <- function(data) {
                ,]
   if (dim(data)[1] ==0) { return(data)}
   #step 3:
-  data <- data[(is.na(data[normalized.name("Samtools Raw Coverage (mother)")])
-                  | data[normalized.name("Samtools Raw Coverage (mother)")] > 9) &
-                 (is.na(data[normalized.name("Genotype (mother)")])
-                  | data[normalized.name("Genotype (mother)")] == "het")          &
-                 (is.na(data[normalized.name("Genotype (father)")])
-                  | data[normalized.name("Genotype (father)")] == "hom ref")  
-               ,]
+  xdata <- data[grep("^X",data$Variant.ID),]
+  adata <- data[grep("^X",data$Variant.ID,invert=T),]
+  data <- rbind(xdata[(is.na(xdata[normalized.name("Samtools Raw Coverage (mother)")])
+                  | xdata[normalized.name("Samtools Raw Coverage (mother)")] > 9) &
+                 (is.na(xdata[normalized.name("Genotype (mother)")])
+                  | xdata[normalized.name("Genotype (mother)")] == "het")          &
+                 (is.na(xdata[normalized.name("Genotype (father)")])
+                  | xdata[normalized.name("Genotype (father)")] == "hom ref")  
+               ,],
+                adata[(is.na(adata[normalized.name("Samtools Raw Coverage (mother)")])
+                  | adata[normalized.name("Samtools Raw Coverage (mother)")] > 9) &
+                (is.na(adata[normalized.name("Samtools Raw Coverage (father)")])
+                  | adata[normalized.name("Samtools Raw Coverage (father)")] > 9)
+               ,])
   if (dim(data)[1] ==0) { return(data)}
   
   #step 4:
