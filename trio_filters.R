@@ -1024,11 +1024,11 @@ Filter.for.tier2 <- function(data, is.comphet = FALSE) {
     #inclusion rule 3:
     temp <- sapply(data[normalized.name("ClinVar Clinical Significance (#1)")], as.character)
     temp[is.na(temp)] <- "0"
-    R3 = (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Likely pathogenic;Pathogenic")
+    R3 = (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Pathogenic|Likely Pathogenic")
 
     temp <- sapply(data[normalized.name("ClinVar Clinical Significance (#2)")], as.character)
     temp[is.na(temp)] <- "0"
-    R3 = R3 | (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Likely pathogenic;Pathogenic")
+    R3 = R3 | (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Pathogenic|Likely Pathogenic")
 
     Functional.1 <- Filter.by.Function(sapply(data[normalized.name("Function (#1)")], as.character))
     Functional.2 <- Filter.by.Function(sapply(data[normalized.name("Function (#2)")], as.character))
@@ -1082,7 +1082,7 @@ Filter.for.tier2 <- function(data, is.comphet = FALSE) {
     #inclusion rule 3:
     temp <- sapply(data[normalized.name("ClinVar.Clinical.Significance")], as.character)
     temp[is.na(temp)] <- "0"
-    R3 = (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Likely pathogenic;Pathogenic")
+    R3 = (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Pathogenic|Likely Pathogenic")
 
     Functional <- Filter.by.Function(sapply(data[normalized.name("Function")], as.character))
 

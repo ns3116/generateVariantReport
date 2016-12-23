@@ -49,7 +49,7 @@ Filter.for.tier2.general <- function(data) {
   #inclusion rule 2:
   temp <- sapply(data[normalized.name("ClinVar Clinical Significance")], as.character)
   temp[is.na(temp)] <- 'NA'
-  R2 = (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Likely pathogenic;Pathogenic")
+  R2 = (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Pathogenic|Likely Pathogenic")
 
   Functional <- Filter.by.Function(sapply(data[normalized.name("Function")], as.character))
 
@@ -241,7 +241,7 @@ Filter.for.tier2.pdnm.kv <- function(data) {
   #inclusion rule 4:
   temp <- sapply(data[normalized.name("ClinVar Clinical Significance")], as.character)
   temp[is.na(temp)] <- 'NA'
-  R4 = (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Likely pathogenic;Pathogenic")
+  R4 = (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Pathogenic|Likely Pathogenic")
 
   R.all <- R1 | R2 | R3 | R4
   data <- data[R.all,]
@@ -287,7 +287,7 @@ Filter.for.tier2.pdnm.lof <- function(data) {
   #inclusion rule 3:
   temp <- sapply(data[normalized.name("ClinVar Clinical Significance")], as.character)
   temp[is.na(temp)] <- 'NA'
-  R3 = (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Likely pathogenic;Pathogenic")
+  R3 = (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Pathogenic|Likely Pathogenic")
 
   #inclusion rule 4:
   R4 <- (sapply(data[normalized.name("ClinGen")], as.character) == '1')
@@ -487,7 +487,7 @@ Filter.for.tier2.prec.kv.lof <- function(data) {
   #inclusion rule 3:
   temp <- sapply(data[normalized.name("ClinVar Clinical Significance")], as.character)
   temp[is.na(temp)] <- 'NA'
-  R3 = (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Likely pathogenic;Pathogenic")
+  R3 = (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Pathogenic|Likely Pathogenic")
 
 
   fun.functional <- function(x) {
