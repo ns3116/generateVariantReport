@@ -39,6 +39,228 @@ normalized.name <- function(names) {
 }
 
 Filter.for.compound.heterozygote <- function(data) {
+    return(rbind(
+                 Filter.for.compound.heterozygote.all(data[grep("DENOVO",data$Comp.Het.Flag, invert = T),]),
+                 Filter.for.compound.heterozygote.denovo(data[grepl("DENOVO",data$Comp.Het.Flag) & grepl("DE NOVO",data$Denovo.Flag...1.),],1,2),
+                 Filter.for.compound.heterozygote.denovo(data[grepl("DENOVO",data$Comp.Het.Flag) & grepl("DE NOVO",data$Denovo.Flag...2.),],2,1)
+                 ))
+}
+
+Filter.for.compound.heterozygote.denovo <- function(data,dnum,cnum) {
+  #check for correct columns, just in case the format has been changed
+  columns <- c("Var Ctrl Freq #1 & #2 (co-occurance)","Genotype (mother) (#1)", 
+               "Genotype (father) (#1)","Genotype (mother) (#2)","Genotype (father) (#2)",
+                "Function (#1)","Function (#2)",
+               "Ctrl MAF (#1)", "Evs Eur Maf (#1)", "Evs Afr Maf (#1)",
+               "ExAC global maf (#1)", "ExAC afr maf (#1)", "ExAC amr maf (#1)",
+               "ExAC eas maf (#1)","ExAC sas maf (#1)","ExAC fin maf (#1)",
+               "ExAC nfe maf (#1)","ExAC oth maf (#1)",
+               "Ctrl MAF (#2)", "Evs Eur Maf (#2)", "Evs Afr Maf (#2)",
+               "ExAC global maf (#2)", "ExAC afr maf (#2)", "ExAC amr maf (#2)",
+               "ExAC eas maf (#2)","ExAC sas maf (#2)","ExAC fin maf (#2)",
+               "ExAC nfe maf (#2)","ExAC oth maf (#2)",
+               "Minor Hom Ctrl (#1)","Evs All Genotype Count (#1)","ExAC global gts (#1)",
+               "Evs Filter Status (#1)","ExAC global gts (#1)",
+               "Minor Hom Ctrl (#2)","Evs All Genotype Count (#2)","ExAC global gts (#2)",
+               "Evs Filter Status (#2)","ExAC global gts (#2)" 
+              )
+  
+  #make sure all columns are present
+  stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
+  
+  if (dim(data)[1] ==0) { return(data)}
+  #step 1: 
+  data   <- data[is.na(data[normalized.name("Var Ctrl Freq #1 & #2 (co-occurance)")])
+                 | data[normalized.name("Var Ctrl Freq #1 & #2 (co-occurance)")] == 0,]
+  if (dim(data)[1] ==0) { return(data)}
+  
+  #step 2: 
+  data <- data[(is.na(data[normalized.name(paste0("Genotype (mother) (#",dnum,")"))])
+                | data[normalized.name(paste0("Genotype (mother) (#",dnum,")"))] != "hom")          &
+                (is.na(data[normalized.name(paste0("Genotype (father) (#",dnum,")"))])
+                | data[normalized.name(paste0("Genotype (father) (#",dnum,")"))] != "hom")          &
+                (is.na(data[normalized.name(paste0("Genotype (mother) (#",dnum,")"))])
+                | data[normalized.name(paste0("Genotype (mother) (#",dnum,")"))] != "het")          &
+                (is.na(data[normalized.name(paste0("Genotype (father) (#",dnum,")"))])
+                | data[normalized.name(paste0("Genotype (father) (#",dnum,")"))] != "het")          &
+                (is.na(data[normalized.name(paste0("Genotype (mother) (#",cnum,")"))])
+                | data[normalized.name(paste0("Genotype (mother) (#",cnum,")"))] != "hom")          &
+                (is.na(data[normalized.name(paste0("Genotype (father) (#",cnum,")"))])
+                | data[normalized.name(paste0("Genotype (father) (#",cnum,")"))] != "hom") 
+               ,]
+  if (dim(data)[1] ==0) { return(data)}
+  
+  #step 3:
+  Index <- which(grepl("^SYNONYMOUS",data[normalized.name(paste0("Function (#",dnum,")"))][,1]) & (data[normalized.name(paste0("TraP Score (#",dnum,")"))] < 0.4 | is.na(data[normalized.name(paste0("TraP Score (#",dnum,")"))])))
+  if (length(Index) >0) {
+    data <- data[-Index,]
+  }
+  if (dim(data)[1] ==0) { return(data)}
+  
+  Index <- which(grepl("^INTRON_EXON",data[normalized.name(paste0("Function (#",dnum,")"))][,1]) & (data[normalized.name(paste0("TraP Score (#",dnum,")"))] < 0.4 | is.na(data[normalized.name(paste0("TraP Score (#",dnum,")"))])))
+  if (length(Index) >0) {
+    data <- data[-Index,]
+  }
+  if (dim(data)[1] ==0) { return(data)}
+  
+  Index <- which(grepl("^SYNONYMOUS",data[normalized.name(paste0("Function (#",cnum,")"))][,1]) & (data[normalized.name(paste0("TraP Score (#",cnum,")"))] < 0.4 | is.na(data[normalized.name(paste0("TraP Score (#",cnum,")"))])))
+
+  if (length(Index) >0) {
+    data <- data[-Index,]
+  }
+  if (dim(data)[1] ==0) { return(data)}
+  
+  Index <- which(grepl("^INTRON_EXON",data[normalized.name(paste0("Function (#",cnum,")"))][,1]) & (data[normalized.name(paste0("TraP Score (#",cnum,")"))] < 0.4 | is.na(data[normalized.name(paste0("TraP Score (#",cnum,")"))])))
+
+  if (length(Index) >0) {
+    data <- data[-Index,]
+  }
+  if (dim(data)[1] ==0) { return(data)}
+  
+  
+  #step 4:
+  data <- data[(is.na(data[normalized.name(paste0("Ctrl MAF (#",dnum,")"))])
+                | data[normalized.name(paste0("Ctrl MAF (#",dnum,")"))] == 0)        &
+                 (is.na(data[normalized.name(paste0("Evs Eur Maf (#",dnum,")"))])
+                  | data[normalized.name(paste0("Evs Eur Maf (#",dnum,")"))] == 0)        & 
+                 (is.na(data[normalized.name(paste0("Evs Afr Maf (#",dnum,")"))])
+                  | data[normalized.name(paste0("Evs Afr Maf (#",dnum,")"))] == 0)        &
+                 (is.na(data[normalized.name(paste0("ExAC global maf (#",dnum,")"))])
+                  | data[normalized.name(paste0("ExAC global maf (#",dnum,")"))] == 0)    &
+                 (is.na(data[normalized.name(paste0("ExAC afr maf (#",dnum,")"))])
+                  | data[normalized.name(paste0("ExAC afr maf (#",dnum,")"))] == 0)        &
+                 (is.na(data[normalized.name(paste0("ExAC amr maf (#",dnum,")"))])
+                  | data[normalized.name(paste0("ExAC amr maf (#",dnum,")"))] == 0)        &
+                 (is.na(data[normalized.name(paste0("ExAC eas maf (#",dnum,")"))])
+                  | data[normalized.name(paste0("ExAC eas maf (#",dnum,")"))] == 0)        &
+                 (is.na(data[normalized.name(paste0("ExAC sas maf (#",dnum,")"))])
+                  | data[normalized.name(paste0("ExAC sas maf (#",dnum,")"))] == 0)        &
+                 (is.na(data[normalized.name(paste0("ExAC fin maf (#",dnum,")"))])
+                  | data[normalized.name(paste0("ExAC fin maf (#",dnum,")"))] == 0)        &
+                 (is.na(data[normalized.name(paste0("ExAC nfe maf (#",dnum,")"))])
+                  | data[normalized.name(paste0("ExAC nfe maf (#",dnum,")"))] == 0)        &
+                 (is.na(data[normalized.name(paste0("ExAC oth maf (#",dnum,")"))])
+                  | data[normalized.name(paste0("ExAC oth maf (#",dnum,")"))] == 0)        &
+                 (is.na(data[normalized.name(paste0("Ctrl MAF (#",cnum,")"))])
+                  | data[normalized.name(paste0("Ctrl MAF (#",cnum,")"))] < 0.01)        &
+                 (is.na(data[normalized.name(paste0("Evs Eur Maf (#",cnum,")"))])
+                  | data[normalized.name(paste0("Evs Eur Maf (#",cnum,")"))] < 0.01)        & 
+                 (is.na(data[normalized.name(paste0("Evs Afr Maf (#",cnum,")"))])
+                  | data[normalized.name(paste0("Evs Afr Maf (#",cnum,")"))] < 0.01)        &
+                 (is.na(data[normalized.name(paste0("ExAC global maf (#",cnum,")"))])
+                  | data[normalized.name(paste0("ExAC global maf (#",cnum,")"))] < 0.01)    &
+                 (is.na(data[normalized.name(paste0("ExAC afr maf (#",cnum,")"))])
+                  | data[normalized.name(paste0("ExAC afr maf (#",cnum,")"))] < 0.01)        &
+                 (is.na(data[normalized.name(paste0("ExAC amr maf (#",cnum,")"))])
+                  | data[normalized.name(paste0("ExAC amr maf (#",cnum,")"))] < 0.01)        &
+                 (is.na(data[normalized.name(paste0("ExAC eas maf (#",cnum,")"))])
+                  | data[normalized.name(paste0("ExAC eas maf (#",cnum,")"))] < 0.01)        &
+                 (is.na(data[normalized.name(paste0("ExAC sas maf (#",cnum,")"))])
+                  | data[normalized.name(paste0("ExAC sas maf (#",cnum,")"))] < 0.01)        &
+                 (is.na(data[normalized.name(paste0("ExAC fin maf (#",cnum,")"))])
+                  | data[normalized.name(paste0("ExAC fin maf (#",cnum,")"))] < 0.01)        &
+                 (is.na(data[normalized.name(paste0("ExAC nfe maf (#",cnum,")"))])
+                  | data[normalized.name(paste0("ExAC nfe maf (#",cnum,")"))] < 0.01)        &
+                 (is.na(data[normalized.name(paste0("ExAC oth maf (#",cnum,")"))])
+                  | data[normalized.name(paste0("ExAC oth maf (#",cnum,")"))] < 0.01)
+               ,]
+  if (dim(data)[1] ==0) { return(data)}
+  
+  #step 5:
+  #denovo filters
+  data <- data[(is.na(data[normalized.name(paste0("QC Fail Ctrl (#",dnum,")"))])
+                | data[normalized.name(paste0("QC Fail Ctrl (#",dnum,")"))] == 0)                   &
+                (is.na(data[normalized.name(paste0("Ctrl MAF (#",dnum,")"))])
+                  | data[normalized.name(paste0("Ctrl MAF (#",dnum,")"))]  == 0)                    &
+                is.na(data[normalized.name(paste0("Evs All Genotype Count (#",dnum,")"))])          &
+                is.na(data[normalized.name(paste0("ExAC global gts (#",dnum,")"))])
+               ,]
+  if (dim(data)[1] ==0) { return(data)}
+  
+  #step 1: 
+  data   <- data[is.na(data[normalized.name(paste0("Percent Read Alt (child) (#",dnum,")"))])
+                 | data[normalized.name(paste0("Percent Read Alt (child) (#",dnum,")"))] > 0.3,]
+  if (dim(data)[1] ==0) { return(data)}
+  
+  #step 2: 
+  data <- data[(is.na(data[normalized.name(paste0("Genotype Qual GQ (child) (#",dnum,")"))])
+                  | data[normalized.name(paste0("Genotype Qual GQ (child) (#",dnum,")"))] > 20)      &
+               (is.na(data[normalized.name(paste0("Qual By Depth QD (child) (#",dnum,")"))]) 
+                  | data[normalized.name(paste0("Qual By Depth QD (child) (#",dnum,")"))] > 2)       &
+               (is.na(data[normalized.name(paste0("Rms Map Qual MQ (child) (#",dnum,")"))])
+                  | data[normalized.name(paste0("Rms Map Qual MQ (child) (#",dnum,")"))] > 40)       &
+               (is.na(data[normalized.name(paste0("Genotype Qual GQ (child) (#",dnum,")"))]) 
+                  | data[normalized.name(paste0("Genotype Qual GQ (child) (#",dnum,")"))] > 20)      &
+               (is.na(data[normalized.name(paste0("Qual (child) (#",dnum,")"))]) 
+                  | data[normalized.name(paste0("Qual (child) (#",dnum,")"))] > 50)                  &
+               (is.na(data[normalized.name(paste0("Samtools Raw Coverage (child) (#",dnum,")"))])
+                  | data[normalized.name(paste0("Samtools Raw Coverage (child) (#",dnum,")"))] > 9) &
+               (is.na(data[normalized.name(paste0("Evs Filter Status (#",dnum,")"))])
+                  | data[normalized.name(paste0("Evs Filter Status (#",dnum,")"))] != "FAIL") 
+              ,]
+  if (dim(data)[1] ==0) { return(data)}
+  
+  #step 3: //de novo flag is not filtered here. Which can be filtered separately
+  data <- data[(!is.na(data[normalized.name(paste0("Samtools Raw Coverage (mother) (#",dnum,")"))])
+                & data[normalized.name(paste0("Samtools Raw Coverage (mother) (#",dnum,")"))] > 9)      &
+                (!is.na(data[normalized.name(paste0("Samtools Raw Coverage (father) (#",dnum,")"))])
+                  & data[normalized.name(paste0("Samtools Raw Coverage (father) (#",dnum,")"))] > 9)
+               ,]
+  #Other chet filters
+  data <- data[(is.na(data[normalized.name(paste0("Minor Hom Ctrl (#",cnum,")"))])
+                | data[normalized.name(paste0("Minor Hom Ctrl (#",cnum,")"))] == 0),]
+  if (dim(data)[1] ==0) {return(data)}
+  
+  Index <- is.na(data[normalized.name(paste0("Evs All Genotype Count (#",cnum,")"))]) 
+  for (i in 1:length(Index)) {
+    if (!Index[i]) { #not is NA
+      str <-as.character(data[i,normalized.name(paste0("Evs All Genotype Count (#",cnum,")"))])
+      not.done <- (length(grep("A1A1=[[123456789]]",str))==0) & (length(grep("A2A2=[[123456789]]",str))==0) & 
+        (length(grep("A3A3=[[123456789]]",str))==0) 
+      
+      if (not.done) { #not found 
+        genotypes <- strsplit(str,"/")[[1]]
+        genotype.count <- strsplit(genotypes,"=")[[1]][2]
+        not.done <- genotype.count == "0"
+      }
+      if (not.done) { #the last condition has been checked
+        Index[i] <- TRUE
+      }
+    }
+  }
+  data <- data[Index,]
+  if (dim(data)[1] ==0) { return(data)}
+  
+  Index <- is.na(data[normalized.name(paste0("ExAC global gts (#",cnum,")"))]) 
+  for (i in 1:length(Index)) {
+    if (!Index[i]) { #not is NA
+      str <- as.character(data[i,normalized.name(paste0("ExAC global gts (#",cnum,")"))])
+      not.done <- !is.na(str)
+      if (not.done) {
+        not.done <- (length(grep("/0'$",str))>0)
+      }
+      
+      if (not.done) {
+        #print(str)
+        genotype.count <- strsplit(str,"/")[[1]]
+        if ((length(genotype.count) ==4) & (length(grep("NA",genotype.count[1])) >0)) {
+          not.done <- (genotype.count[3] == "0") & (length(grep("^0",genotype.count[4])) >0)
+        }
+      }
+    if (not.done) { #the last condition has been checnke
+      Index[i] <- TRUE
+    }
+    }
+  }
+  data <- data[Index,]
+  if (dim(data)[1] ==0) { return(data)}
+  
+  data <- data[((is.na(data[normalized.name(paste0("Evs Filter Status (#",cnum,")"))])
+                 | data[normalized.name(paste0("Evs Filter Status (#",cnum,")"))] != "FAIL"))
+                ,]
+  data
+}
+Filter.for.compound.heterozygote.all <- function(data) {
   #check for correct columns, just in case the format has been changed
   columns <- c("Var Ctrl Freq #1 & #2 (co-occurance)","Genotype (mother) (#1)", 
                "Genotype (father) (#1)","Genotype (mother) (#2)","Genotype (father) (#2)",
@@ -415,18 +637,23 @@ Filter.for.hemizygous <- function(data) {
   #step 3:
   xdata <- data[grep("^X",data$Variant.ID),]
   adata <- data[grep("^X",data$Variant.ID,invert=T),]
-  data <- rbind(xdata[(is.na(xdata[normalized.name("Samtools Raw Coverage (mother)")])
-                  | xdata[normalized.name("Samtools Raw Coverage (mother)")] > 9) &
-                 (is.na(xdata[normalized.name("Genotype (mother)")])
-                  | xdata[normalized.name("Genotype (mother)")] == "het")          &
-                 (is.na(xdata[normalized.name("Genotype (father)")])
-                  | xdata[normalized.name("Genotype (father)")] == "hom ref")  
-               ,],
-                adata[(is.na(adata[normalized.name("Samtools Raw Coverage (mother)")])
+  if(dim(xdata)[1] > 0){
+      xdata <- xdata[(is.na(xdata[normalized.name("Samtools Raw Coverage (mother)")])
+                      | xdata[normalized.name("Samtools Raw Coverage (mother)")] > 9) &
+                     (is.na(xdata[normalized.name("Genotype (mother)")])
+                      | xdata[normalized.name("Genotype (mother)")] == "het")          &
+                     (is.na(xdata[normalized.name("Genotype (father)")])
+                      | xdata[normalized.name("Genotype (father)")] == "hom ref")  
+                   ,]
+  }
+  if(dim(adata)[1] > 0){
+      adata <- adata[(is.na(adata[normalized.name("Samtools Raw Coverage (mother)")])
                   | adata[normalized.name("Samtools Raw Coverage (mother)")] > 9) &
                 (is.na(adata[normalized.name("Samtools Raw Coverage (father)")])
                   | adata[normalized.name("Samtools Raw Coverage (father)")] > 9)
-               ,])
+               ,]
+  }
+  data <- rbind(xdata,adata)
   if (dim(data)[1] ==0) { return(data)}
   
   #step 4:
