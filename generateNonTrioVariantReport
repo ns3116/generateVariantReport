@@ -63,7 +63,7 @@ opt_parser = OptionParser(option_list=option_list)
 opt = parse_args(opt_parser)
 
 #read csv file as dataframe for dnm, chet, and add_anno, and MGI essential gene list
-source(paste(scriptPath,"/r0.3_filters_nontrio.R",sep=""))
+source(paste(scriptPath,"/nonTrio_filters.R",sep=""))
 
 MGIe <- read.table(opt$MGIe,header=T)
 
@@ -108,6 +108,15 @@ colnames(pdnm)[dim(pdnm)[2]] <- "PGM.Info"}
 pchet <- pdnm[which(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep="")) %in% names(table(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep="")))[which(table(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep=""))) > 1)])),]
 pdnm <- pdnm[which(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep="")) %in% names(table(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep="")))[which(table(do.call(paste,c(pdnm[c("Sample.Name","Gene.Name")],sep=""))) == 1)])), ]
 
+#DNM LoF Depleted
+data <- Filter.by.Allele.Count(input.data,opt$filter)
+pdnmd <- Filter.for.tier2.pdnm.lof.depl(data)
+write.csv(pdnmd, file = "pdnm_lof_depl.csv")
+if(!opt$noVEP){system(paste0(scriptPath,"/append_vep.py -i pdnm_lof_depl.csv --append_file pdnm_lof_depl.csv.vep --force_append"),wait=T)}
+pdnmd <- read.csv("pdnm_lof_depl.csv.vep",na.strings="NA")
+if(dim(pdnmd)[1]>0){pdnmd <- cbind(pdnmd, paste0(pdnmd$Variant.ID,"\nnonTrio\n",pdnmd$HGVSc,"\n",pdnmd$HGVSp,"\n",pdnmd$Samtools.Raw.Coverage,"\n",pdnmd$Percent.Alt.Read,"\n",pdnmd$Genotype.Qual.GQ))
+colnames(pdnmd)[dim(pdnmd)[2]] <- "PGM.Info"}
+
 #REC KV LoF
 data <- Filter.by.HemiHomo.Count(input.data,0)
 prec <- Filter.for.tier2.prec.kv.lof(data)
@@ -125,11 +134,13 @@ sum.sheet <- createSheet(outwb, sheetName = "Summary")
     pdnm.sheet <- createSheet(outwb, sheetName = "pDNM-LoF5")
     prec.sheet <- createSheet(outwb, sheetName = "pREC-KVLoF")
     pchet.sheet <- createSheet(outwb, sheetName = "pCHET-KVLoF")
+    pdnmd.sheet <- createSheet(outwb, sheetName = "pDNM-LoFD")
     addDataFrame(kv, kv.sheet, row.names=F, showNA=F)
     addDataFrame(kv5, kv5.sheet, row.names=F, showNA=F)
     addDataFrame(pdnm, pdnm.sheet, row.names=F, showNA=F)
     addDataFrame(prec, prec.sheet, row.names=F, showNA=F)
     addDataFrame(pchet, pchet.sheet, row.names=F, showNA=F)
+    addDataFrame(pdnmd, pdnmd.sheet, row.names=F, showNA=F)
 
 #LoFd <- read.table(opt$LoFd,header=T)
 sum = NULL
@@ -143,35 +154,37 @@ LoF_var <- c(
 )
 
 #Create Summary Table
-for(samp in unique(c(as.vector(kv$Sample.Name),as.vector(kv5$Sample.Name),as.vector(pdnm$Sample.Name),as.vector(prec$Sample.Name),as.vector(pchet$Sample.Name)))){
+for(samp in unique(c(as.vector(kv$Sample.Name),as.vector(kv5$Sample.Name),as.vector(pdnm$Sample.Name),as.vector(prec$Sample.Name),as.vector(pchet$Sample.Name),as.vector(pdnmd$Sample.Name)))){
 
 Nkv <- length(which(kv$Sample.Name==samp))
 Nkv5 <- length(which(kv5$Sample.Name==samp))
 Npdnm <- length(which(pdnm$Sample.Name==samp))
 Nprec <- length(which(prec$Sample.Name==samp))
 Npchet <- length(which(pchet$Sample.Name==samp))
+Npdnmd <- length(which(pdnmd$Sample.Name==samp))
 
 samp.kv <- kv[which(kv$Sample.Name==samp),]
 samp.kv5 <- kv5[which(kv5$Sample.Name==samp),]
 samp.pdnm <- pdnm[which(pdnm$Sample.Name==samp),]
 samp.prec <- prec[which(prec$Sample.Name==samp),]
 samp.pchet <- pchet[which(pchet$Sample.Name==samp),]
+samp.pdnmd <- pdnmd[which(pdnmd$Sample.Name==samp),]
 samp.kv.genes <- kv[which(kv$Sample.Name==samp),]$Gene.Name
 samp.kv5.genes <- kv5[which(kv5$Sample.Name==samp),]$Gene.Name
 samp.pdnm.genes <- pdnm[which(pdnm$Sample.Name==samp),]$Gene.Name
 samp.prec.genes <- prec[which(prec$Sample.Name==samp),]$Gene.Name
 samp.pchet.genes <- pchet[which(pchet$Sample.Name==samp),]$Gene.Name
+samp.pdnmd.genes <- pdnmd[which(pdnmd$Sample.Name==samp),]$Gene.Name
 if(opt$summary){writeNonTrioSummary(samp.kv,samp.kv5,samp.pdnm,samp.prec,samp.pchet,dirname(opt$out))}
 
-
-sum <- rbind(sum,c(samp,Nkv,Nkv5,Npdnm,Nprec,Npchet,paste(gsub("'","",samp.kv.genes),collapse="\n"),paste(gsub("'","",samp.kv5.genes),collapse="\n"),paste(gsub("'","",samp.pdnm.genes),collapse="\n"),paste(gsub("'","",samp.prec.genes),collapse="\n"),paste(gsub("'","",samp.pchet.genes),collapse="\n"),""))
-
+sum <- rbind(sum,c(samp,Nkv,Nkv5,Npdnm,Nprec,Npchet,Npdnmd,paste(gsub("'","",samp.kv.genes),collapse="\n"),paste(gsub("'","",samp.kv5.genes),collapse="\n"),paste(gsub("'","",samp.pdnm.genes),collapse="\n"),paste(gsub("'","",samp.prec.genes),collapse="\n"),paste(gsub("'","",samp.pchet.genes),collapse="\n"),paste(gsub("'","",samp.pdnmd.genes),collapse="\n"),""))
 }
 
+dim(sum)
 #Add in samples with no tier1/2 variants
 samps <- unique(input.data$Sample.Name)
 for(samp in samps[!samps %in% sum[,1]]){
-    sum <- rbind(sum,c(samp,"0","0","0","0","0","","","","","",""))
+    sum <- rbind(sum,c(samp,"0","0","0","0","0","0","","","","","","",""))
 }
 sum <- sum[order(gsub(".*(f[0-9]*)","\\1",sum[,1])),]
 if(is.null(dim(sum))){sum <- t(as.matrix(sum))}
@@ -183,12 +196,12 @@ if(opt$pheno != "NULL"){
         sampPheno <- pheno[which(pheno$CHGVID == samp),]$DetailedPhenotype
         if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype}
         if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype}
-        sum[i,12] <- as.vector(sampPheno)
+        sum[i,14] <- as.vector(sampPheno)
     }
 }
 #Write Excel file
 
-sum <- rbind(c("diagseq","pDNM KV",paste0("pDNM KV",opt$filter),"T2 pDNM LoF","T2 pRec LoF","T2 pCHET LoF","pDNM KnownVar",paste0("pDNM KnownVar (<",opt$filter," Alleles)"),"Tier 2 pDNM LoF","Tier 2 pRec LoF","Tier 2 pCHET LoF","Phenotype"),sum)
+sum <- rbind(c("diagseq","pDNM KV",paste0("pDNM KV",opt$filter),"T2 pDNM LoF","T2 pRec LoF","T2 pCHET LoF","pDNM LoFd","pDNM KnownVar",paste0("pDNM KnownVar (<",opt$filter," Alleles)"),"Tier 2 pDNM LoF","Tier 2 pRec LoF","Tier 2 pCHET LoF","Tier 2 pDNM LoF Depleted","Phenotype"),sum)
 
 cellBlock <- CellBlock(sum.sheet,1,1,dim(sum)[1],dim(sum)[2])
 colnames_style <- CellStyle(outwb) + Font(outwb,isBold=T) + Alignment(horizontal="ALIGN_CENTER",vertical="VERTICAL_CENTER")
@@ -208,26 +221,26 @@ setRowHeight(getRows(sum.sheet,1),1,multiplier=3)
 for(col in c(1)){
     setColumnWidth(sum.sheet,col,14)
 }
-setColumnWidth(sum.sheet,12,24)
-for(col in c(8:11)){
+setColumnWidth(sum.sheet,14,24)
+for(col in c(9:13)){
     setColumnWidth(sum.sheet,col,11)
 }
-for(col in c(2:6)){
+for(col in c(2:7)){
     setColumnWidth(sum.sheet,col,6)
 }
 redFill <- Fill(foregroundColor = "red", backgroundColor = "red")
 
-for(col in c(7:11)){
+for(col in c(8:13)){
     ind <- which(sum[,col] != "")
     if(length(ind) > 0){CB.setFill(cellBlock, redFill, ind, col)}
 }
 #ind <- which(sum[,8] != "")
 #CB.setFill(cellBlock, redFill, ind, 8)
 grayFill <- Fill(foregroundColor = "gray")
-CB.setFill(cellBlock, grayFill, 1,7:dim(sum)[2])
+CB.setFill(cellBlock, grayFill, 1,8:dim(sum)[2])
 smallFont <- Font(outwb,heightInPoints=10)
-CB.setFont(cellBlock, smallFont, 2:dim(sum)[1],12)
-CB.setFont(cellBlock, smallFont, 1, 2:6)
+CB.setFont(cellBlock, smallFont, 2:dim(sum)[1],14)
+CB.setFont(cellBlock, smallFont, 1, 2:7)
 
 excelColumn<- function(num){
     name <- "" 
