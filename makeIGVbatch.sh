@@ -23,8 +23,8 @@ while read line; do
 done<$(dirname $IN)/$(basename ${IN%.*}).list > $(dirname $IN)/$(basename ${IN%.*}).bamloc
 
 #sed 's/\/nfs/\\\\10.73.52.21/' $(dirname $IN)/$(basename ${IN%.*}).bamloc |sed 's/\//\\/g' > $(dirname $IN)/$(basename ${IN%.*}).bamwinloc
-#sed 's/\/nfs/\\\\10.73.52.21/' $(dirname $IN)/$(basename ${IN%.*}).bamloc |sed 's/homes\/svaprojects/homes/'|sed 's/10.73.52.21\/fastq\([0-9]\+\)/igm-avere.igm.cumc.columbia.edu\/fastq\1/' | sed 's/\//\\/g' > $(dirname $IN)/$(basename ${IN%.*}).bamwinloc
-sed 's/\/nfs/\\\\igm-avere.igm.cumc.columbia.edu/' $(dirname $IN)/$(basename ${IN%.*}).bamloc |sed 's/homes\/svaprojects/homes/' | sed 's/\//\\/g' > $(dirname $IN)/$(basename ${IN%.*}).bamwinloc
+sed 's/\/nfs/\\\\10.73.52.21/' $(dirname $IN)/$(basename ${IN%.*}).bamloc |sed 's/homes\/svaprojects/homes/'|sed 's/10.73.52.21\/fastq\([0-9]\+\)/igm-avere.igm.cumc.columbia.edu\/fastq\1/' | sed 's/\//\\/g'|sed 's/\\\\ALIGNMENT/\\ALIGNMENT/g' > $(dirname $IN)/$(basename ${IN%.*}).bamwinloc
+#sed 's/\/nfs/\\\\igm-avere.igm.cumc.columbia.edu/' $(dirname $IN)/$(basename ${IN%.*}).bamloc |sed 's/homes\/svaprojects/homes/' | sed 's/\//\\/g' > $(dirname $IN)/$(basename ${IN%.*}).bamwinloc
 
 while read i
     do PRO_LOC=$(grep -w $(echo $i|awk '{print $2}') $(dirname $IN)/$(basename ${IN%.*}).bamwinloc|head -n1)
