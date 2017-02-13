@@ -1,5 +1,5 @@
 #Script:	IGM Sequencing Clinic Tier 1 Philosopy post-ATAV Script
-#Version:	0.3
+#Version:	0.5
 #Designed:	Nick Stong, Slavé Petrovski, David B. Goldstein
 #Developed:	Nick Stong, Slavé Petrovski, Quanli Wang
 #Last Update:	2016-07-01
@@ -497,6 +497,7 @@ Filter.for.homozygous <- function(data) {
   #make sure all columns are present
   stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
   
+  if (dim(data)[1] ==0) { return(data)}
   #step 1: 
   data   <- data[is.na(data[normalized.name("Percent Read Alt (child)")])
                  | data[normalized.name("Percent Read Alt (child)")] > 0.799,]

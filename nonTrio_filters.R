@@ -1,5 +1,5 @@
 #Script:	IGM Sequencing Clinic diagnostic non-trio post-ATAV Script
-#Version:	0.3
+#Version:	0.5
 #Designed:	Nick Stong, Slavé Petrovski, David B. Goldstein
 #Developed:	Nick Stong, Slavé Petrovski, Quanli Wang
 #Last Update:	2016-07-01
@@ -177,7 +177,6 @@ Filter.for.tier2.pdnm.kv <- function(data) {
 
   #make sure all columns are present
   stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
-
   #Exclusion rule 2:
   Index <- is.na(data[normalized.name("ExAC global gts")])
   data <- data[Index,]

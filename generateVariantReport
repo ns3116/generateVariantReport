@@ -167,9 +167,9 @@ chet.data <- cbind(chet.data, gsub("'","",chet.data$Gene.Name) %in% MGIe$Gene_sy
 colnames(chet.data)[dim(chet.data)[2]] <- "MGI.Essential"
 chet.data <- merge(chet.data, ctrl_counts, by.x = "Gene.Name", by.y = "Gene", all.x = T)
 chet.data <- merge(chet.data, case_counts, by.x = "Gene.Name", by.y = "Gene", all.x = T)
-chet.data <- cbind(chet.data, paste0(chet.data$Variant.ID...1.,"\n",chet.data$Comp.Het.Flag,"\n",chet.data$HGVSc...1.,"\n",chet.data$HGVSp...1.,"\n",chet.data$Samtools.Raw.Coverage..child....1.,"\n",chet.data$Percent.Alt.Read..child....1.,"\n99")) #,chet.data$Genotype.Qual.GQ..child....1.))
+chet.data <- cbind(chet.data, paste0(chet.data$Variant.ID...1.,"\n",chet.data$Comp.Het.Flag,"\n",chet.data$HGVSc...1.,"\n",chet.data$HGVSp...1.,"\n",chet.data$Samtools.Raw.Coverage..child....1.,"\n",chet.data$Percent.Read.Alt..child....1.,"\n",chet.data$Genotype.Qual.GQ..child....1.)) #,chet.data$Genotype.Qual.GQ..child....1.))
 colnames(chet.data)[dim(chet.data)[2]] <- "PGM.Info.1"
-chet.data <- cbind(chet.data, paste0(chet.data$Variant.ID...2.,"\n",chet.data$Comp.Het.Flag,"\n",chet.data$HGVSc...2.,"\n",chet.data$HGVSp...2.,"\n",chet.data$Samtools.Raw.Coverage..child....2.,"\n",chet.data$Percent.Alt.Read..child....2.,"\n99")) #,chet.data$Genotype.Qual.GQ..child....2.))
+chet.data <- cbind(chet.data, paste0(chet.data$Variant.ID...2.,"\n",chet.data$Comp.Het.Flag,"\n",chet.data$HGVSc...2.,"\n",chet.data$HGVSp...2.,"\n",chet.data$Samtools.Raw.Coverage..child....2.,"\n",chet.data$Percent.Read.Alt..child....2.,"\n",chet.data$Genotype.Qual.GQ..child....2.)) #,chet.data$Genotype.Qual.GQ..child....2.))
 colnames(chet.data)[dim(chet.data)[2]] <- "PGM.Info.2"
 col.id <- grep("Gene.Name",colnames(chet.data))
 new.pos <- 3
