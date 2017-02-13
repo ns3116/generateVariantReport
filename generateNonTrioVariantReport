@@ -175,12 +175,11 @@ samp.pdnm.genes <- pdnm[which(pdnm$Sample.Name==samp),]$Gene.Name
 samp.prec.genes <- prec[which(prec$Sample.Name==samp),]$Gene.Name
 samp.pchet.genes <- pchet[which(pchet$Sample.Name==samp),]$Gene.Name
 samp.pdnmd.genes <- pdnmd[which(pdnmd$Sample.Name==samp),]$Gene.Name
-if(opt$summary){writeNonTrioSummary(samp.kv,samp.kv5,samp.pdnm,samp.prec,samp.pchet,dirname(opt$out))}
+if(opt$summary){writeNonTrioSummary(samp.kv,samp.kv5,samp.pdnm,samp.prec,samp.pchet,samp.pdnmd,dirname(opt$out))}
 
 sum <- rbind(sum,c(samp,Nkv,Nkv5,Npdnm,Nprec,Npchet,Npdnmd,paste(gsub("'","",samp.kv.genes),collapse="\n"),paste(gsub("'","",samp.kv5.genes),collapse="\n"),paste(gsub("'","",samp.pdnm.genes),collapse="\n"),paste(gsub("'","",samp.prec.genes),collapse="\n"),paste(gsub("'","",samp.pchet.genes),collapse="\n"),paste(gsub("'","",samp.pdnmd.genes),collapse="\n"),""))
 }
 
-dim(sum)
 #Add in samples with no tier1/2 variants
 samps <- unique(input.data$Sample.Name)
 for(samp in samps[!samps %in% sum[,1]]){
