@@ -53,7 +53,7 @@ writeCHET <- function(chet,rtf){
            addText(rtf,paste0(gene," is an OMIM disease gene associated with ",gsub(" \\|",", and", chet[i,]$OMIM.Disease.1),adj,". "))}
         else if(!is.na(chet[i,]$MGI.Essential.1) & chet[i,]$MGI.Essential.1 == 1){addText(rtf,paste0(gene," is an essential gene. "))}
         addText(rtf,"\n")
-        if(chet[i,]$Ctrl.MAF.1 == 0 & (chet[i,]$Evs.All.Maf.1 == 0 | is.na(chet[i,]$Evs.All.Maf.1)) & (chet[i,]$ExAC.global.maf.1 == 0 | is.na(dnm[i,]$ExAC.global.maf))){
+        if((chet[i,]$Ctrl.MAF.1 == 0 | is.na(chet[i,]$Ctrl.MAF.1)) & (chet[i,]$Evs.All.Maf.1 == 0 | is.na(chet[i,]$Evs.All.Maf.1)) & (chet[i,]$ExAC.global.maf.1 == 0 | is.na(chet[i,]$ExAC.global.maf.1))){
             addText(rtf,"The first variant is absent from internal and external control samples. ")}
         else{addText(rtf,paste0("The first variant has a control MAF of ",chet[i,]$Ctrl.MAF.1*100,"% in IGM controls, ",chet[i,]$Evs.All.Maf.1*100,"% in EVS, and ",chet[i,]$ExAC.global.maf.1,"% in ExAC. "))}
         if(chet[i,]$Function.1 == "NON_SYNONYMOUS_CODING"){addText(rtf,paste0("It is a ",gsub("_"," ",chet[i,]$Polyphen.Humvar.Prediction.1)," missense variant with a PolyPhen2 score of ",chet[i,]$Polyphen.Humvar.Score.1,". "))}
@@ -64,7 +64,7 @@ writeCHET <- function(chet,rtf){
         if(!is.na(chet[i,]$HGMD.Class.1)){
             addText(rtf,paste0("This variant is listed as ",chet[i,]$HGMD.Class.1," in HGMD. "))}
         addText(rtf,"\n")
-        if(chet[i,]$Ctrl.MAF.2 == 0 & (chet[i,]$Evs.All.Maf.2 == 0 | is.na(chet[i,]$Evs.All.Maf.2)) & (chet[i,]$ExAC.global.maf.2 == 0 | is.na(chet[i,]$ExAC.global.maf.2))){
+        if((chet[i,]$Ctrl.MAF.2 == 0 | is.na(chet[i,]$Ctrl.MAF.2)) & (chet[i,]$Evs.All.Maf.2 == 0 | is.na(chet[i,]$Evs.All.Maf.2)) & (chet[i,]$ExAC.global.maf.2 == 0 | is.na(chet[i,]$ExAC.global.maf.2))){
             addText(rtf,"The second variant is absent from internal and external control samples. ")}
         else{addText(rtf,paste0("The second variant has a control MAF of ",chet[i,]$Ctrl.MAF.2*100,"% in IGM controls, ",chet[i,]$Evs.All.Maf.2*100,"% in EVS, and ",chet[i,]$ExAC.global.maf.2,"% in ExAC. "))}
         if(chet[i,]$Function.2 == "NON_SYNONYMOUS_CODING"){addText(rtf,paste0("It is a ",gsub("_"," ",chet[i,]$Polyphen.Humvar.Prediction.2)," missense variant with a PolyPhen2 score of ",chet[i,]$Polyphen.Humvar.Score.2,". "))}
@@ -98,7 +98,7 @@ writeSummary <- function(dnm,hom,hem,chet,tier2,dir){
     return
 }
 
-writeNonTrioSummary <- function(samp.kv,samp.kv5,samp.pdnm,samp.prec,samp.pchet,dir){
+writeNonTrioSummary <- function(samp.kv,samp.kv5,samp.pdnm,samp.prec,samp.pchet,samp.lofd,dir){
     dir.create(file.path(dir,"Sample_Summaries"),showWarnings=F)
     allSamps <- c(as.vector(samp.kv$Sample.Name),as.vector(samp.kv5$Sample.Name),as.vector(samp.pdnm$Sample.Name),as.vector(samp.prec$Sample.Name),as.vector(samp.pchet$Sample.Name))
     if(length(allSamps) == 0){return}
@@ -110,6 +110,7 @@ writeNonTrioSummary <- function(samp.kv,samp.kv5,samp.pdnm,samp.prec,samp.pchet,
     if(dim(samp.kv5)[1] > 0){writeDNM(samp.kv5,rtf)}
     if(dim(samp.prec)[1] > 0){writeDNM(samp.prec,rtf)}
     if(dim(samp.pchet)[1] > 0){writeDNM(samp.pchet,rtf)}
+    if(dim(samp.lofd)[1] > 0){writeDNM(samp.lofd,rtf)}
     done(rtf)
     return
 }
