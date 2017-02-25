@@ -12,7 +12,7 @@ writeDNM <- function(dnm,rtf){
         gene = gsub("'","",dnm[i,]$Gene.Name)
         addHeader(rtf,gene,subtitle=dnm[i,]$Variant.ID,font.size=14)
         startParagraph(rtf)
-        addText(rtf,paste0("This is a ",dnm[i,]$Flag," ",gsub("_"," ",tolower(dnm[i,]$Function))," variant in ",gene,". "))
+        addText(rtf,paste0("This is a ",dnm[i,]$Denovo.Flag," ",gsub("_"," ",tolower(dnm[i,]$Function))," variant in ",gene,". "))
         if((dnm[i,]$Ctrl.MAF == 0 | is.na(dnm[i,]$Ctrl.MAF)) & (dnm[i,]$Evs.All.Maf == 0 | is.na(dnm[i,]$Evs.All.Maf)) & (dnm[i,]$ExAC.global.maf == 0 | is.na(dnm[i,]$ExAC.global.maf))){
             addText(rtf,"This variant is absent from internal and external control samples. ")}
         else{addText(rtf,paste0("This variant has a control MAF of ",dnm[i,]$Ctrl.MAF*100,"% in IGM controls, ",dnm[i,]$Evs.All.Maf*100,"% in EVS, and ",dnm[i,]$ExAC.global.maf,"% in ExAC. "))}
@@ -44,7 +44,7 @@ writeCHET <- function(chet,rtf){
         gene = gsub("'","",chet[i,]$Gene.Name)
         addHeader(rtf,gene,paste0(subtitle=chet[i,]$Variant.ID.1," , ",subtitle=chet[i,]$Variant.ID.2),font.size=14)
         startParagraph(rtf)
-        addText(rtf,paste0("These are ",chet[i,]$Flag," variants in ",gene,". The first is a ",gsub("_"," ",tolower(chet[i,]$Function.1))," and the second is a ",gsub("_"," ",tolower(chet[i,]$Function.2)), " variant. "))
+        addText(rtf,paste0("These are ",chet[i,]$Comp.Het.Flag," variants in ",gene,". The first is a ",gsub("_"," ",tolower(chet[i,]$Function.1))," and the second is a ",gsub("_"," ",tolower(chet[i,]$Function.2)), " variant. "))
         adj=" ";if(!is.na(chet[i,]$X0.05._anypopn_RVIS.tile.ExAC..1) & as.vector(chet[i,]$X0.05._anypopn_RVIS.tile.ExAC..1) <= 25){adj="n in"}
         addText(rtf,paste0(gene," is a",adj,"tolerant gene with an RVIS score of ",signif(as.double(as.vector(chet[i,]$X0.05._anypopn_RVIS.tile.ExAC..1)),digits=2),". "))
         if(!is.na(chet[i,]$LoF.pLI.ExAC..1) & as.vector(chet[i,]$LoF.pLI.ExAC..1) >= .9){addText(rtf,paste0(gene," is LoF intolerant gene with a PLI score of ",signif(as.double(as.vector(chet[i,]$LoF.pLI.ExAC..1)),digits=2),". "))}
