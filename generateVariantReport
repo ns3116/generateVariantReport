@@ -28,6 +28,66 @@ LoF_var <- c(
 return 
 }
 
+#Function to find indices of flanking variants
+flankingInd <- function(data, is.comphet = FALSE) {
+    if (dim(data)[1] ==0) { return(grep("return","empty"))}
+    if (is.comphet) {
+       #inclusion rule 1:
+        suppressWarnings(temp1 <- sapply(data["HGMD.indel.9bpflanks.1"], as.numeric))
+        temp1[is.na(temp1)] <- 0
+        suppressWarnings(temp2 <- sapply(data["HGMD.indel.9bpflanks.2"], as.numeric))
+        temp2[is.na(temp2)] <- 0
+        suppressWarnings(temp3 <- sapply(data["ClinVar.pathogenic.indels.1"], as.numeric))
+        temp3[is.na(temp3)] <- 0
+        suppressWarnings(temp4 <- sapply(data["ClinVar.pathogenic.indels.2"], as.numeric))
+        temp4[is.na(temp4)] <- 0
+        R1 <- temp1 > 0 | temp2 > 0 | temp3 > 0 | temp4 > 0
+        
+        #inclusion rule 2:
+        temp<- sapply(data["HGMDm2site.1"], as.character)
+        R21.1 <- is.na(temp)
+        temp<- sapply(data["HGMDm1site.1"], as.character)
+        R22.1 <- is.na(temp)
+        temp<- sapply(data["HGMDp1site.1"], as.character)
+        R23.1 <- is.na(temp)
+        temp<- sapply(data["HGMDp2site.1"], as.character)
+        R24.1 <- is.na(temp)
+        temp<- sapply(data["HGMDm2site.2"], as.character)
+        R21.2 <- is.na(temp)
+        temp<- sapply(data["HGMDm1site.2"], as.character)
+        R22.2 <- is.na(temp)
+        temp<- sapply(data["HGMDp1site.2"], as.character)
+        R23.2 <- is.na(temp)
+        temp<- sapply(data["HGMDp2site.2"], as.character)
+        R24.2 <- is.na(temp)
+        R2 <- !(R21.1 & R22.1 & R23.1 & R24.1 & R21.2 & R22.2 & R23.2 & R24.2)
+
+} else {
+        if (dim(data)[1] ==0) { return(data)}
+        #make sure all columns are present
+        if (dim(data)[1] ==0) { return(grep("return","empty"))}
+        #inclusion rule 1:
+        suppressWarnings(temp1 <- sapply(data["HGMD.indel.9bpflanks"], as.numeric))
+        temp1[is.na(temp1)] <- 0
+
+        suppressWarnings(temp2 <- sapply(data["ClinVar.pathogenic.indels"], as.numeric))
+        temp2[is.na(temp2)] <- 0
+        R1 <- temp1 > 0 | temp2 > 0
+        
+        #inclusion rule 2:
+        temp<- sapply(data["HGMDm2site"], as.character)
+        R21 <- is.na(temp)
+        temp<- sapply(data["HGMDm1site"], as.character)
+        R22 <- is.na(temp)
+        temp<- sapply(data["HGMDp1site"], as.character)
+        R23 <- is.na(temp)
+        temp<- sapply(data["HGMDp2site"], as.character)
+        R24 <- is.na(temp)
+        R2 <- !(R21 & R22 & R23 & R24)
+    }
+    return(which(R1|R2))
+}
+
 #Function to return HGVSg given ATAV output with Variant.ID and Variant.Type 
 HGVSg <- function(input, index=0){
 if(index == 0){inputVariants <- input[,c("Variant.ID","Variant.Type")]}
@@ -407,7 +467,30 @@ samp.1chet.KnownClinVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vec
 ind <- grep("Patho",samp.chet.tierOne$ClinVar.Clinical.Significance.2,ignore.case=T)
 samp.2chet.KnownClinVar <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$ClinVar.PubmedID.2,")",sep=""))))
 
-samp.KnownVar <- gsub("'","",unique(c(as.vector(samp.dnm.KnownVar),as.vector(samp.hom.KnownVar),as.vector(samp.hem.KnownVar),as.vector(samp.1chet.KnownVar),as.vector(samp.2chet.KnownVar),as.vector(samp.dnm.KnownClinVar),as.vector(samp.hom.KnownClinVar),as.vector(samp.hem.KnownClinVar),as.vector(samp.1chet.KnownClinVar),as.vector(samp.2chet.KnownClinVar))))
+#KnownVar DenovoDB
+diseasePheno <- "congenital|developmental_disorder|intellectualDisability|epilepsy"
+ind <- grep("congenital",samp.dnm.tierOne$DenovoDB.Phenotype,ignore.case=T)
+samp.dnm.KnownDenovoDB <- c(as.vector(samp.dnm.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.dnm.tierOne[ind,]$DenovoDB.PubmedID,")",sep=""))))
+ind <- grep(diseasePheno, samp.hom.tierOne$DenovoDB.Phenotype,ignore.case=T)
+samp.hom.KnownDenovoDB <- c(as.vector(samp.hom.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.hom.tierOne[ind,]$DenovoDB.PubmedID,")",sep=""))))
+ind <- grep(diseasePheno, samp.hem.tierOne$DenovoDB.Phenotype,ignore.case=T)
+samp.hem.KnownDenovoDB <- c(as.vector(samp.hem.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.hem.tierOne[ind,]$DenovoDB.PubmedID,")",sep=""))))
+ind <- grep(diseasePheno, samp.chet.tierOne$DenovoDB.Phenotype.1,ignore.case=T)
+samp.1chet.KnownDenovoDB <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$DenovoDB.PubmedID.1,")",sep=""))))
+ind <- grep(diseasePheno, samp.chet.tierOne$DenovoDB.Phenotype.2,ignore.case=T)
+samp.2chet.KnownDenovoDB <- c(as.vector(samp.chet.tierOne[ind,]$Gene.Name),as.vector(gsub("\\(\\)","",paste("(",samp.chet.tierOne[ind,]$DenovoDB.PubmedID.2,")",sep=""))))
+
+#KnownVar Flanking 
+ind <- flankingInd(samp.dnm.tierOne) 
+samp.dnm.KnownVarFlank <- as.vector(samp.dnm.tierOne[ind,]$Gene.Name)
+ind <- flankingInd(samp.hom.tierOne)
+samp.hom.KnownVarFlank <- as.vector(samp.hom.tierOne[ind,]$Gene.Name)
+ind <- flankingInd(samp.hem.tierOne) 
+samp.hem.KnownVarFlank <- as.vector(samp.hem.tierOne[ind,]$Gene.Name)
+ind <- flankingInd(samp.chet.tierOne, is.comphet=T) 
+samp.1chet.KnownVarFlank <- as.vector(samp.chet.tierOne[ind,]$Gene.Name)
+
+samp.KnownVar <- gsub("'","",unique(c(as.vector(samp.dnm.KnownVar),as.vector(samp.hom.KnownVar),as.vector(samp.hem.KnownVar),as.vector(samp.1chet.KnownVar),as.vector(samp.2chet.KnownVar),as.vector(samp.dnm.KnownDenovoDB),as.vector(samp.hom.KnownDenovoDB),as.vector(samp.hem.KnownDenovoDB),as.vector(samp.1chet.KnownDenovoDB),as.vector(samp.2chet.KnownDenovoDB),as.vector(samp.dnm.KnownClinVar),as.vector(samp.hom.KnownClinVar),as.vector(samp.hem.KnownClinVar),as.vector(samp.1chet.KnownClinVar),as.vector(samp.2chet.KnownClinVar),as.vector(samp.dnm.KnownVarFlank),as.vector(samp.hom.KnownVarFlank),as.vector(samp.hem.KnownVarFlank),as.vector(samp.1chet.KnownVarFlank))))
 
 samp.gcClinicalOMIM <- unique(gsub("'","",c(as.vector(samp.dnm.tierOne[which(!is.na(samp.dnm.tierOne$OMIM.Disease)),]$Gene.Name),as.vector(samp.hem.tierOne[which(!is.na(samp.hem.tierOne$OMIM.Disease)),]$Gene.Name),as.vector(samp.hom.tierOne[which(!is.na(samp.hom.tierOne$OMIM.Disease)),]$Gene.Name),as.vector(samp.chet.tierOne[which(!is.na(samp.chet.tierOne$OMIM.Disease.1)),]$Gene.Name),"-")))
 
