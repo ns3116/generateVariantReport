@@ -218,7 +218,7 @@ def doVEP(fl):
             out_form = var[0] + '\t' + var[1] + '\t' + v + '\t' + var[2] + '\t' + var[3] + '\n'
             os.write(inp, out_form)
 
-	vep_call = ["perl", "/nfs/goldstein/goldsteinlab/software/variant_effect_predictor_74/variant_effect_predictor.pl",
+	vep_call = ["perl", "/nfs/goldstein/software/variant_effect_predictor_74/variant_effect_predictor.pl",
                                  "-i", inp_path, "--format", "vcf", "--dir", "/nfs/goldstein/goldsteinlab/software/variant_effect_predictor_74",
                                  "-o", out_path, "--ccds", " --protein", "--domains", "--polyphen=s", "--sift=b", "--symbol",
                                  "--numbers",  "--hgvs", "--canonical",  "--cache", "--offline", "--fasta",
