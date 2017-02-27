@@ -137,9 +137,6 @@ class Variant(object):
         if var1.sev_con > var2.sev_con:
             return var1
         elif var1.sev_con == var2.sev_con:
-            if var1.polyphen > var2.polyphen:
-                return var1
-            elif var1.polyphen == var2.polyphen:
                 if var1.canonical and not var2.canonical:
                     return var1
                 elif var1.canonical is var2.canonical:
