@@ -30,62 +30,62 @@ return
 
 #Function to find indices of flanking variants
 flankingInd <- function(data, is.comphet = FALSE) {
-    if (dim(data)[1] ==0) { return(grep("return","empty"))}
-    if (is.comphet) {
-       #inclusion rule 1:
-        suppressWarnings(temp1 <- sapply(data["HGMD.indel.9bpflanks.1"], as.numeric))
-        temp1[is.na(temp1)] <- 0
-        suppressWarnings(temp2 <- sapply(data["HGMD.indel.9bpflanks.2"], as.numeric))
-        temp2[is.na(temp2)] <- 0
-        suppressWarnings(temp3 <- sapply(data["ClinVar.pathogenic.indels.1"], as.numeric))
-        temp3[is.na(temp3)] <- 0
-        suppressWarnings(temp4 <- sapply(data["ClinVar.pathogenic.indels.2"], as.numeric))
-        temp4[is.na(temp4)] <- 0
-        R1 <- temp1 > 0 | temp2 > 0 | temp3 > 0 | temp4 > 0
-        
-        #inclusion rule 2:
-        temp<- sapply(data["HGMDm2site.1"], as.character)
-        R21.1 <- is.na(temp)
-        temp<- sapply(data["HGMDm1site.1"], as.character)
-        R22.1 <- is.na(temp)
-        temp<- sapply(data["HGMDp1site.1"], as.character)
-        R23.1 <- is.na(temp)
-        temp<- sapply(data["HGMDp2site.1"], as.character)
-        R24.1 <- is.na(temp)
-        temp<- sapply(data["HGMDm2site.2"], as.character)
-        R21.2 <- is.na(temp)
-        temp<- sapply(data["HGMDm1site.2"], as.character)
-        R22.2 <- is.na(temp)
-        temp<- sapply(data["HGMDp1site.2"], as.character)
-        R23.2 <- is.na(temp)
-        temp<- sapply(data["HGMDp2site.2"], as.character)
-        R24.2 <- is.na(temp)
-        R2 <- !(R21.1 & R22.1 & R23.1 & R24.1 & R21.2 & R22.2 & R23.2 & R24.2)
+if (dim(data)[1] ==0) { return(grep("return","empty"))}
+if (is.comphet) {
+   #inclusion rule 1:
+    suppressWarnings(temp1 <- sapply(data["HGMD.indel.9bpflanks.1"], as.numeric))
+    temp1[is.na(temp1)] <- 0
+    suppressWarnings(temp2 <- sapply(data["HGMD.indel.9bpflanks.2"], as.numeric))
+    temp2[is.na(temp2)] <- 0
+    suppressWarnings(temp3 <- sapply(data["ClinVar.pathogenic.indels.1"], as.numeric))
+    temp3[is.na(temp3)] <- 0
+    suppressWarnings(temp4 <- sapply(data["ClinVar.pathogenic.indels.2"], as.numeric))
+    temp4[is.na(temp4)] <- 0
+    R1 <- temp1 > 0 | temp2 > 0 | temp3 > 0 | temp4 > 0
+    
+    #inclusion rule 2:
+    temp<- sapply(data["HGMDm2site.1"], as.character)
+    R21.1 <- is.na(temp)
+    temp<- sapply(data["HGMDm1site.1"], as.character)
+    R22.1 <- is.na(temp)
+    temp<- sapply(data["HGMDp1site.1"], as.character)
+    R23.1 <- is.na(temp)
+    temp<- sapply(data["HGMDp2site.1"], as.character)
+    R24.1 <- is.na(temp)
+    temp<- sapply(data["HGMDm2site.2"], as.character)
+    R21.2 <- is.na(temp)
+    temp<- sapply(data["HGMDm1site.2"], as.character)
+    R22.2 <- is.na(temp)
+    temp<- sapply(data["HGMDp1site.2"], as.character)
+    R23.2 <- is.na(temp)
+    temp<- sapply(data["HGMDp2site.2"], as.character)
+    R24.2 <- is.na(temp)
+    R2 <- !(R21.1 & R22.1 & R23.1 & R24.1 & R21.2 & R22.2 & R23.2 & R24.2)
 
 } else {
-        if (dim(data)[1] ==0) { return(data)}
-        #make sure all columns are present
-        if (dim(data)[1] ==0) { return(grep("return","empty"))}
-        #inclusion rule 1:
-        suppressWarnings(temp1 <- sapply(data["HGMD.indel.9bpflanks"], as.numeric))
-        temp1[is.na(temp1)] <- 0
+    if (dim(data)[1] ==0) { return(data)}
+    #make sure all columns are present
+    if (dim(data)[1] ==0) { return(grep("return","empty"))}
+    #inclusion rule 1:
+    suppressWarnings(temp1 <- sapply(data["HGMD.indel.9bpflanks"], as.numeric))
+    temp1[is.na(temp1)] <- 0
 
-        suppressWarnings(temp2 <- sapply(data["ClinVar.pathogenic.indels"], as.numeric))
-        temp2[is.na(temp2)] <- 0
-        R1 <- temp1 > 0 | temp2 > 0
-        
-        #inclusion rule 2:
-        temp<- sapply(data["HGMDm2site"], as.character)
-        R21 <- is.na(temp)
-        temp<- sapply(data["HGMDm1site"], as.character)
-        R22 <- is.na(temp)
-        temp<- sapply(data["HGMDp1site"], as.character)
-        R23 <- is.na(temp)
-        temp<- sapply(data["HGMDp2site"], as.character)
-        R24 <- is.na(temp)
-        R2 <- !(R21 & R22 & R23 & R24)
-    }
-    return(which(R1|R2))
+    suppressWarnings(temp2 <- sapply(data["ClinVar.pathogenic.indels"], as.numeric))
+    temp2[is.na(temp2)] <- 0
+    R1 <- temp1 > 0 | temp2 > 0
+    
+    #inclusion rule 2:
+    temp<- sapply(data["HGMDm2site"], as.character)
+    R21 <- is.na(temp)
+    temp<- sapply(data["HGMDm1site"], as.character)
+    R22 <- is.na(temp)
+    temp<- sapply(data["HGMDp1site"], as.character)
+    R23 <- is.na(temp)
+    temp<- sapply(data["HGMDp2site"], as.character)
+    R24 <- is.na(temp)
+    R2 <- !(R21 & R22 & R23 & R24)
+}
+return(which(R1|R2))
 }
 
 #Function to return HGVSg given ATAV output with Variant.ID and Variant.Type 
@@ -93,12 +93,12 @@ HGVSg <- function(input, index=0){
 if(index == 0){inputVariants <- input[,c("Variant.ID","Variant.Type")]}
 else{inputVariants <- input[,c(paste0("Variant.ID.",index),paste0("Variant.Type.",index))]}
 out <- apply(inputVariants,1,function(x){
-    if(x[2] == "snv"){
-        x <- sub("-",">",sub("-","",sub("-",":g.",x[1])))}
-    else if(x[2] == "indel"){
-        tmpIndel <- strsplit(as.character(x[1]),"-")
-        x <- paste0(tmpIndel[[1]][1],":g.",tmpIndel[[1]][2],"_",as.integer(tmpIndel[[1]][2])+nchar(tmpIndel[[1]][3])-1,"delins",tmpIndel[[1]][4])
-    }
+if(x[2] == "snv"){
+    x <- sub("-",">",sub("-","",sub("-",":g.",x[1])))}
+else if(x[2] == "indel"){
+    tmpIndel <- strsplit(as.character(x[1]),"-")
+    x <- paste0(tmpIndel[[1]][1],":g.",tmpIndel[[1]][2],"_",as.integer(tmpIndel[[1]][2])+nchar(tmpIndel[[1]][3])-1,"delins",tmpIndel[[1]][4])
+}
 })
 out <- as.data.frame(out)
 if (dim(out)[1] ==0) {out <- data.frame(tmp = character())}
@@ -112,16 +112,17 @@ return(out)
 nonTrioToTrio <- function(data){
 colnames(data)[which(colnames(data) %in% c("Sample.Name"))] <- c("Child")
 data <- data[which(
-                   (data$subRVIS.Domain.Score <= 40 | 
-                   is.na(data$subRVIS.Domain.Score)) &
-                   (data$Polyphen.Humvar.Score >= .95 |
-                   is.na(data$Polyphen.Humvar.Score))),]
+               (data$subRVIS.Domain.Score <= 40 | 
+               is.na(data$subRVIS.Domain.Score)) &
+               (data$Polyphen.Humvar.Score >= .95 |
+               is.na(data$Polyphen.Humvar.Score))),]
 data <- data[which(!(data$Function %in% c("SYNONYMOUS_CODING","SYNONYMOUS_STOP","INTRON_EXON_BOUNDARY"))),]
 return(data)
 }
 
 ##################################################################################################################
-scriptPath <- getScriptPath()
+#scriptPath <- getScriptPath()
+scriptPath <- "~/bin/generateVariantReport"
 
 #Source files
 source(file.path(scriptPath,"writeSampleSummaries.R"))
@@ -130,6 +131,8 @@ source(file.path(scriptPath,"writeSampleSummaries.R"))
 option_list = list(
 make_option(c("-c","--cmphet"), type="character", default="trio/trio_comphet.csv", help="Compound Heterozygous ATAV output file [default = trio/trio_comphet.csv]"),
 make_option(c("-d","--dnm"), type="character", default="trio/trio_denovoandhom.csv", help="Denovo Mutation ATAV output file [default = trio/trio_denovoandhom.csv]"),
+make_option(c("-t","--tnt"), type="character", default="trioNonTrio/trioNonTrio_genotypes.csv", help="trioNonTrio ATAV output file [default = trioNonTrio/trioNonTrio_genotypes.csv]"),
+make_option(c("--ptm"), type="character", default="ptlMcsm/ptlMcsm_parental.mosaic.csv", help="Parental mosaic ATAV output file [default = ptlMcsm/ptlMcsm_parental.mosaic.csv]"),
 make_option(c("-o","--out"), type="character", default="variant_report.xlsx", help="Report output file [default  = variant_report.xlsx]"),
 make_option(c("-m","--mgi"), type="character", default=paste(scriptPath,"/MGI_essential.txt",sep=""), help="MGI essiential gene list [default  = <Script Path>/MGI_essential.txt]", dest="MGIe"),
 make_option(c("-s","--summary"), type="logical", default=F, action="store_true", help="Flag to generate individual sample text summaries [default  = False"),
@@ -142,7 +145,6 @@ make_option(c("-n","--nontrio"), type="logical", default=F, action="store_true",
 
 opt_parser = OptionParser(option_list=option_list)
 opt = parse_args(opt_parser)
-
 #read csv file as dataframe for dnm, chet, and add_anno, and MGI essential gene list
 source(paste(scriptPath,"/trio_filters.R",sep=""))
 
@@ -267,14 +269,44 @@ colnames(tier2.chet) <- gsub("\\.\\.\\.([12]).",".\\1",colnames(tier2.chet))
 tier2.chet <- cbind(tier2.chet, HGVSg(tier2.chet,1), HGVSg(tier2.chet,2))
 }
 
-#Make VEP input file
-VEP_dir = file.path(dirname(opt$out),"VEP")
-dir.create(VEP_dir,showWarnings=F)
-if(opt$nontrio){
-write.table(sub("-","\t",sub("-","\t.\t",sub("-","\t",c(as.vector(dnm$Variant.ID),as.vector(hem$Variant.ID),as.vector(hom$Variant.ID),as.vector(chet$Variant.ID.1),as.vector(chet$Variant.ID.2))))),file=file.path(VEP_dir,"all_var.VEP.input"),quote=F,col.names=F,row.names=F)
-}else{
-write.table(sub("-","\t",sub("-","\t.\t",sub("-","\t",c(as.vector(dnm$Variant.ID),as.vector(hem$Variant.ID),as.vector(hom$Variant.ID),as.vector(chet$Variant.ID.1),as.vector(chet$Variant.ID.2),as.vector(tier2$Variant.ID),as.vector(tier2.chet$Variant.ID.1),as.vector(tier2.chet$Variant.ID.2))))),file=file.path(VEP_dir,"all_var.VEP.input"),quote=F,col.names=F,row.names=F)
-}
+if(!opt$noVEP){system(paste0(scriptPath,"/append_vep.py -i ",opt$ptm," --append_file ",opt$ptm, ".vep --force_append"),wait=T)}
+#Tier 1 Parental mosaic 
+#Merging additional annotations to table
+ptm.data = read.csv(paste0(opt$ptm,".vep"),na.strings="NA")
+ptm.data <- cbind(ptm.data, gsub("'","",ptm.data$Gene.Name) %in% MGIe$Gene_symbol)
+colnames(ptm.data)[dim(ptm.data)[2]] <- "MGI.Essential"
+ptm.data <- merge(ptm.data, ctrl_counts, by.x = "Gene.Name", by.y = "Gene", all.x = T)
+ptm.data <- merge(ptm.data, case_counts, by.x = "Gene.Name", by.y = "Gene", all.x = T)
+colnames(ptm.data)[dim(ptm.data)[2]] <- "PGM.Info"
+col.id <- grep("Gene.Name",colnames(ptm.data))
+new.pos <- 3
+ptm.data <- ptm.data[,c(2:3,col.id,c((new.pos):ncol(ptm.data))[-1])]
+col.id <- grep("Function",colnames(ptm.data))
+new.pos <- 4
+ptm.data <- ptm.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(ptm.data))[-(col.id-new.pos+1)])]
+
+source(paste(scriptPath,"/nonTrio_filters.R",sep=""))
+#Tier 3 trioNonTrio  
+#Merging additional annotations to table
+if(!opt$noVEP){system(paste0(scriptPath,"/append_vep.py -i ",opt$tnt," --append_file ",opt$tnt, ".vep --force_append"),wait=T)}
+tnt.data = read.csv(paste0(opt$tnt,".vep"),na.strings="NA")
+tnt.data <- cbind(tnt.data, gsub("'","",tnt.data$Gene.Name) %in% MGIe$Gene_symbol)
+colnames(tnt.data)[dim(tnt.data)[2]] <- "MGI.Essential"
+tnt.data <- cbind(tnt.data, paste0(tnt.data$Variant.ID,"\nnonTrio\n",tnt.data$HGVSc,"\n",tnt.data$HGVSp,"\n",tnt.data$Samtools.Raw.Coverage,"\n",tnt.data$Percent.Read.Alt,"\n",tnt.data$Genotype.Qual.GQ))
+colnames(tnt.data)[dim(tnt.data)[2]] <- "PGM.Info"
+col.id <- grep("Gene.Name",colnames(tnt.data))
+new.pos <- 3
+tnt.data <- tnt.data[,c(2:3,col.id,c((new.pos):ncol(tnt.data))[-1])]
+col.id <- grep("Function",colnames(tnt.data))
+new.pos <- 4
+tnt.data <- tnt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(tnt.data))[-(col.id-new.pos+1)])]
+
+data <- Filter.by.Allele.Count(tnt.data,0)
+kv <- Filter.for.tier2.pdnm.kv(data)
+data <- Filter.by.Allele.Count(tnt.data,5)
+t2lof <- Filter.for.tier2.pdnm.lof(data)
+write.csv(kv,file = "kvTNT.csv")
+write.csv(t2lof, file = "t2lof.csv")
 
 #Create workbook and sheets
 outwb <- createWorkbook()
@@ -286,12 +318,18 @@ if(!opt$nontrio){
     chet.sheet <- createSheet(outwb, sheetName = "CHET")
     tier2.sheet <- createSheet(outwb, sheetName = "Tier 2")
     tier2.chet.sheet <- createSheet(outwb, sheetName = "Tier 2(CHET)")
+    kv.sheet <- createSheet(outwb, sheetName = "TNT KV")
+    t2lof.sheet <- createSheet(outwb, sheetName = "TNT LoF")
+    ptm.sheet <- createSheet(outwb, sheetName = "Ptl MSC")
     addDataFrame(dnm, dnm.sheet, row.names=F, showNA=F)
     addDataFrame(hem, hem.sheet, row.names=F, showNA=F)
     addDataFrame(hom, hom.sheet, row.names=F, showNA=F)
     addDataFrame(chet, chet.sheet, row.names=F, showNA=F)
     addDataFrame(tier2, tier2.sheet, row.names=F, showNA=F)
     addDataFrame(tier2.chet, tier2.chet.sheet, row.names=F, showNA=F)
+    addDataFrame(kv, kv.sheet, row.names=F, showNA=F)
+    addDataFrame(t2lof, t2lof.sheet, row.names=F, showNA=F)
+    addDataFrame(ptm.data, ptm.sheet, row.names=F, showNA=F)
 }else{
     dnm.sheet <- createSheet(outwb, sheetName = "pDNM")
     hem.sheet <- createSheet(outwb, sheetName = "pHEM")
@@ -332,6 +370,12 @@ samp.hom.tierOne <- hom[which(hom$Child==samp),]
 samp.hem.tierOne <- hem[which(hem$Child==samp),]
 samp.chet.tierOne <- chet[which(chet$Child==samp),]
 samp.tierTwo <- tier2[which(tier2$Child==samp),]
+samp.kv <- kv[which(kv$Sample.Name==samp),]
+samp.t2lof <- t2lof[which(t2lof$Sample.Name==samp),]
+samp.kv.genes <- unique(c(as.vector(kv[which(kv$Sample.Name==samp),]$Gene.Name)))
+samp.t2lof.genes <- unique(c(as.vector(t2lof[which(t2lof$Sample.Name==samp),]$Gene.Name)))
+
+
 if(opt$summary){writeSummary(samp.dnm.tierOne,samp.hom.tierOne,samp.hem.tierOne,samp.chet.tierOne,samp.tierTwo,dirname(opt$out))}
 #Add new variant/genotype type
 samp.dnm.tierOne$Gene.Name <- lapply(samp.dnm.tierOne$Gene.Name,function(x){paste0(gsub("'","",x),"(DN)")})
@@ -503,14 +547,13 @@ samp.tier2gcClinicalOMIM <- unique(gsub("'","",c(as.vector(tier2[which(tier2$Chi
 samp.tier2gcClinicalOMIM <- c(samp.tier2gcClinicalOMIM[!samp.tier2gcClinicalOMIM %in% samp.gcClinicalOMIM],"-")
 samp.tier2gcClinicalOMIM <- c(samp.tier2gcClinicalOMIM[!samp.tier2gcClinicalOMIM %in% samp.gcClinicalnonOMIM],"-")
 }
-
-sum <- rbind(sum,c(samp,Ndnm,Nhem,Nhom,Nchet,"",paste(samp.hze,collapse="\n"),paste(samp.hzo,collapse="\n"),paste(samp.clin,collapse="\n"),paste(samp.LoF,collapse="\n"),gsub("^\n*([^)]*\\)?)\n*$","\\1",paste(samp.KnownVar,collapse="\n")),"","",gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalOMIM,sep=": ",collapse=": \n")))),gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalnonOMIM,sep=": ",collapse=": \n")))),gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.tier2gcClinicalOMIM,sep=": ",collapse=": \n"))))))
+sum <- rbind(sum,c(samp,Ndnm,Nhem,Nhom,Nchet,"",paste(samp.hze,collapse="\n"),paste(samp.hzo,collapse="\n"),paste(samp.clin,collapse="\n"),paste(samp.LoF,collapse="\n"),gsub("^\n*([^)]*\\)?)\n*$","\\1",paste(samp.KnownVar,collapse="\n")),paste(gsub("'","",samp.kv.genes),collapse="\n"),paste(gsub("'","",samp.t2lof.genes),collapse="\n"),"","",gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalOMIM,sep=": ",collapse=": \n")))),gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalnonOMIM,sep=": ",collapse=": \n")))),gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.tier2gcClinicalOMIM,sep=": ",collapse=": \n"))))))
 }
 
 #Add in samples with no tier1/2 variants
 samps <- unique(dnm.data$Child)
 for(samp in samps[!samps %in% sum[,1]]){
-    sum <- rbind(sum,c(samp,"0","0","0","0","0","","","","","","","","","",""))
+    sum <- rbind(sum,c(samp,"0","0","0","0","","","","","","","","","","","-","-","-"))
 }
 sum <- sum[order(gsub(".*(f[0-9]*)","\\1",sum[,1])),]
 if(is.null(dim(sum))){sum <- t(as.matrix(sum))}
@@ -522,14 +565,13 @@ if(opt$pheno != "NULL"){
         sampPheno <- pheno[which(pheno$CHGVID == samp),]$DetailedPhenotype
         if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype}
         if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype}
-        sum[i,13] <- as.vector(sampPheno)
+        sum[i,15] <- as.vector(sampPheno)
     }
 }
-
 #Write Excel file
 
 #colnames(sum) <- c("diagseq","DNM","HEM","HOM","CHET","Ethn","HZ[E]","HZ[OMIM]","ClinGen/Var[LoF]","LoF depleted/pLI","KnownVar(PMID)","Candidate Genetic Diagnosis","Pheno","GC Clinical Fit(H/M/L)")
-sum <- rbind(c("diagseq","DNM","HEM","HOM","CHET","Ethn","HZ [E]","HZ [OMIM]","ClinGen / Var [LoF]","LoF depleted / pLI","KnownVar (PMID)","Candidate Genetic Diagnosis","Pheno","OMIM GC Clinical Fit (H/M/L)","non-OMIM GC Clinical Fit (H/M/L)","Tier 2 OMIM Clinical Fit (H/M/L)"),sum)
+sum <- rbind(c("diagseq","DNM","HEM","HOM","CHET","Ethn","HZ [E]","HZ [OMIM]","ClinGen / Var [LoF]","LoF depleted / pLI","KnownVar (PMID)","KnownVar TNT","Haploinsufficient TNT","Candidate Genetic Diagnosis","Pheno","OMIM GC Clinical Fit (H/M/L)","non-OMIM GC Clinical Fit (H/M/L)","Tier 2 OMIM Clinical Fit (H/M/L)"),sum)
 
 cellBlock <- CellBlock(sum.sheet,1,1,dim(sum)[1],dim(sum)[2])
 colnames_style <- CellStyle(outwb) + Font(outwb,isBold=T) + Alignment(horizontal="ALIGN_CENTER",vertical="VERTICAL_CENTER")
@@ -546,11 +588,11 @@ colname_border <- Border(color="black",position="BOTTOM",pen="BORDER_THICK")
 CB.setBorder(cellBlock,colname_border,1,1:dim(sum)[2])
 
 setRowHeight(getRows(sum.sheet,1),1,multiplier=3)
-for(col in c(1,14,15,16)){
+for(col in c(1,16,17,18)){
     setColumnWidth(sum.sheet,col,14)
 }
-setColumnWidth(sum.sheet,13,24)
-for(col in c(7:12)){
+setColumnWidth(sum.sheet,15,24)
+for(col in c(7:14)){
     setColumnWidth(sum.sheet,col,12)
 }
 for(col in c(2:6)){
@@ -558,7 +600,7 @@ for(col in c(2:6)){
 }
 redFill <- Fill(foregroundColor = "red", backgroundColor = "red")
 smallFont <- Font(outwb,heightInPoints=10)
-for(col in c(7:11)){
+for(col in c(7:13)){
     ind <- which(sum[,col] != "")
     if(length(ind) > 0){CB.setFill(cellBlock, redFill, ind, col)}
 }
@@ -566,7 +608,7 @@ ind <- which(sum[,8] != "")
 CB.setFill(cellBlock, redFill, ind, 8)
 grayFill <- Fill(foregroundColor = "gray")
 CB.setFill(cellBlock, grayFill, 1,6:dim(sum)[2])
-CB.setFont(cellBlock, smallFont, 2:dim(sum)[1],13)
+CB.setFont(cellBlock, smallFont, 2:dim(sum)[1],15)
 CB.setFont(cellBlock, smallFont, 1, 2:5)
 #for(col in c(2:5)){
 #    CB.setFont(cellBlock,0,col)
