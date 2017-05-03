@@ -174,12 +174,11 @@ Filter.for.tier2.pdnm.kv <- function(data) {
                "HGMDm1site", "HGMDp1site", "HGMDp2site", "HGMD indel 9bpflanks", "ClinVar pathogenic indels",
                "ClinVar Clinical Significance"
   )
-
   #make sure all columns are present
   stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
   #Exclusion rule 2:
-  Index <- is.na(data[normalized.name("ExAC global gts")])
-  data <- data[Index,]
+  #Index <- is.na(data[normalized.name("ExAC global gts")])
+  #data <- data[Index,]
 
   #Exclusion rule 3:
   suppressWarnings(temp <- sapply(data[normalized.name("Rms Map Qual MQ")], as.numeric))
@@ -240,7 +239,7 @@ Filter.for.tier2.pdnm.kv <- function(data) {
   #inclusion rule 4:
   temp <- sapply(data[normalized.name("ClinVar Clinical Significance")], as.character)
   temp[is.na(temp)] <- 'NA'
-  R4 = (temp == "Pathogenic") | (temp == "Likely pathogenic") | (temp == "Pathogenic|Likely Pathogenic")
+  R4 = (temp == "Pathogenic") | (temp == "Likely Pathogenic") | (temp == "Pathogenic|Likely Pathogenic")
 
   R.all <- R1 | R2 | R3 | R4
   data <- data[R.all,]
