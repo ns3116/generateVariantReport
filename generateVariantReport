@@ -28,6 +28,68 @@ LoF_var <- c(
 return 
 }
 
+wrapFormat <- function(input){
+    gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(input,sep=": ",collapse=": \n"))))
+}
+
+highlightCCDSx <- function(data, myCellBlock, is.comphet = F){
+    yellowFill <- Fill(foregroundColor = "yellow", backgroundColor = "yellow")
+    if(!is.comphet){
+        vidCol <- which(colnames(data) == "Variant.ID")
+        ind <- sapply(grep("0", data$X.Transcripts), function(x)x+1)
+        col <- grep("X.Transcripts",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(sapply(data$Exon, function(x) eval(parse(text=as.vector(x)))) == 1), function(x)x+1)
+        col <- which(colnames(data) == "Exon")
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(data$ExAC.Sample.Covered.10x < 10000), function(x)x+1)
+        col <- grep("ExAC.Sample.Covered.10x",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(data$Het.Binomial.P..child. < 0.05), function(x)x+1)
+        col <- grep("Het.Binomial.P..child.",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+    }else{
+        vidCol1 <- grep("Variant.ID.1",colnames(data))
+        vidCol2 <- grep("Variant.ID.2",colnames(data))
+        ind <- sapply(grep("0", data$X.Transcripts.1), function(x)x+1)
+        col <- grep("X.Transcripts.1",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(grep("0", data$X.Transcripts.2), function(x)x+1)
+        col <- grep("X.Transcripts.2",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol2)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(sapply(data$Exon.1, function(x) eval(parse(text=as.vector(x)))) == 1), function(x)x+1)
+        col <- which(colnames(data) == "Exon.1")
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(sapply(data$Exon.2, function(x) eval(parse(text=as.vector(x)))) == 1), function(x)x+1)
+        col <- which(colnames(data) == "Exon.2")
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol2)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(data$ExAC.Sample.Covered.10x.1 < 10000), function(x)x+1)
+        col <- grep("ExAC.Sample.Covered.10x.1",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(data$ExAC.Sample.Covered.10x.2 < 10000), function(x)x+1)
+        col <- grep("ExAC.Sample.Covered.10x.2",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol2)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(data$Het.Binomial.P..child..1 < 0.05), function(x)x+1)
+        col <- grep("Het.Binomial.P..child..1",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(data$Het.Binomial.P..child..2 < 0.05), function(x)x+1)
+        col <- grep("Het.Binomial.P..child..2",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol2)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+    }
+}
+
 #Function to find indices of flanking variants
 flankingInd <- function(data, is.comphet = FALSE) {
 if (dim(data)[1] ==0) { return(grep("return","empty"))}
@@ -177,6 +239,7 @@ pchet <- dnm[which(do.call(paste,c(dnm[c("Child","Gene.Name")],sep="")) %in% nam
 }else{
 data <- Filter.by.Denovo.Flag(dnm.data,'DE NOVO', strict = TRUE)
 dnm <- Filter.for.denovo(data)
+data <- Filter.by.Denovo.Flag(dnm.data,'DE NOVO', strict = FALSE)
 data <- Filter.by.Allele.Count(data,19)
 tier2 <- Filter.for.tier2(data)
 }
@@ -198,6 +261,8 @@ hem <- nonTrioToTrio(hem)
 data <- Filter.by.Denovo.Flag(dnm.data,'NEWLY HEMIZYGOUS', strict = TRUE) 
 data <- rbind(data,Filter.by.Denovo.Flag(dnm.data,'COMPOUND DELETION', strict = TRUE))
 hem <- Filter.for.hemizygous(data)
+data <- Filter.by.Denovo.Flag(dnm.data,'NEWLY HEMIZYGOUS', strict = FALSE) 
+data <- rbind(data,Filter.by.Denovo.Flag(dnm.data,'COMPOUND DELETION', strict = FALSE))
 data <- Filter.by.HemiHomo.Count(data,9)
 tier2 <- rbind(tier2,Filter.for.tier2(data))
 }
@@ -211,6 +276,7 @@ hom <- nonTrioToTrio(hom)
 }else{
     data <- Filter.by.Denovo.Flag(dnm.data,'NEWLY HOMOZYGOUS', strict = TRUE)  
     hom <- Filter.for.homozygous(data)
+    data <- Filter.by.Denovo.Flag(dnm.data,'NEWLY HOMOZYGOUS', strict = FALSE)  
     data <- Filter.by.HemiHomo.Count(data,9)
     tier2 <- rbind(tier2,Filter.for.tier2(data))
     tier2 <- cbind(tier2, HGVSg(tier2))
@@ -244,6 +310,7 @@ new.pos <- 5
 chet.data <- chet.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(chet.data))[-(col.id-new.pos+1)])]
 data <- Filter.by.CompHet.Flag(chet.data,'COMPOUND HETEROZYGOTE', strict = TRUE)  
 chet <- Filter.for.compound.heterozygote(data)
+data <- Filter.by.CompHet.Flag(chet.data,'COMPOUND HETEROZYGOTE', strict = FALSE)  
 data <- Filter.by.HemiHomo.Count(data,9,T)
 tier2.chet <- Filter.for.tier2(data,T)
 
@@ -284,6 +351,7 @@ ptm.data <- ptm.data[,c(2:3,col.id,c((new.pos):ncol(ptm.data))[-1])]
 col.id <- grep("Function",colnames(ptm.data))
 new.pos <- 4
 ptm.data <- ptm.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(ptm.data))[-(col.id-new.pos+1)])]
+ptm <- ptm.data
 
 source(paste(scriptPath,"/nonTrio_filters.R",sep=""))
 #Tier 3 trioNonTrio  
@@ -294,16 +362,19 @@ tnt.data <- cbind(tnt.data, gsub("'","",tnt.data$Gene.Name) %in% MGIe$Gene_symbo
 colnames(tnt.data)[dim(tnt.data)[2]] <- "MGI.Essential"
 tnt.data <- cbind(tnt.data, paste0(tnt.data$Variant.ID,"\nnonTrio\n",tnt.data$HGVSc,"\n",tnt.data$HGVSp,"\n",tnt.data$Samtools.Raw.Coverage,"\n",tnt.data$Percent.Read.Alt,"\n",tnt.data$Genotype.Qual.GQ))
 colnames(tnt.data)[dim(tnt.data)[2]] <- "PGM.Info"
+col.id <- grep("Sample.Name",colnames(tnt.data))
+new.pos <- 1
+tnt.data <- tnt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(tnt.data))[-(col.id-new.pos+1)])]
 col.id <- grep("Gene.Name",colnames(tnt.data))
 new.pos <- 3
-tnt.data <- tnt.data[,c(2:3,col.id,c((new.pos):ncol(tnt.data))[-1])]
+tnt.data <- tnt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(tnt.data))[-(col.id-new.pos+1)])]
 col.id <- grep("Function",colnames(tnt.data))
 new.pos <- 4
 tnt.data <- tnt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(tnt.data))[-(col.id-new.pos+1)])]
 
 data <- Filter.by.Allele.Count(tnt.data,0)
 kv <- Filter.for.tier2.pdnm.kv(data)
-data <- Filter.by.Allele.Count(tnt.data,5)
+data <- Filter.by.Allele.Count(tnt.data,0)
 t2lof <- Filter.for.tier2.pdnm.lof(data)
 write.csv(kv,file = "kvTNT.csv")
 write.csv(t2lof, file = "t2lof.csv")
@@ -321,6 +392,15 @@ if(!opt$nontrio){
     kv.sheet <- createSheet(outwb, sheetName = "TNT KV")
     t2lof.sheet <- createSheet(outwb, sheetName = "TNT LoF")
     ptm.sheet <- createSheet(outwb, sheetName = "Ptl MSC")
+    dnmCellBlock <- CellBlock(dnm.sheet,1,1,dim(dnm)[1]+1,dim(dnm)[2])
+    hemCellBlock <- CellBlock(hem.sheet,1,1,dim(hem)[1]+1,dim(hem)[2])
+    homCellBlock <- CellBlock(hom.sheet,1,1,dim(hom)[1]+1,dim(hom)[2])
+    chetCellBlock <- CellBlock(chet.sheet,1,1,dim(chet)[1]+1,dim(chet)[2])
+    tier2CellBlock <- CellBlock(tier2.sheet,1,1,dim(tier2)[1]+1,dim(tier2)[2])
+    tier2ChetCellBlock <- CellBlock(tier2.chet.sheet,1,1,dim(tier2.chet)[1]+1,dim(tier2.chet)[2])
+    kvCellBlock <- CellBlock(kv.sheet,1,1,dim(kv)[1]+1,dim(kv)[2])
+    t2lofCellBlock <- CellBlock(t2lof.sheet,1,1,dim(t2lof)[1]+1,dim(t2lof)[2])
+    ptmCellBlock <- CellBlock(ptm.sheet,1,1,dim(ptm)[1]+1,dim(ptm)[2])
     addDataFrame(dnm, dnm.sheet, row.names=F, showNA=F)
     addDataFrame(hem, hem.sheet, row.names=F, showNA=F)
     addDataFrame(hom, hom.sheet, row.names=F, showNA=F)
@@ -329,7 +409,7 @@ if(!opt$nontrio){
     addDataFrame(tier2.chet, tier2.chet.sheet, row.names=F, showNA=F)
     addDataFrame(kv, kv.sheet, row.names=F, showNA=F)
     addDataFrame(t2lof, t2lof.sheet, row.names=F, showNA=F)
-    addDataFrame(ptm.data, ptm.sheet, row.names=F, showNA=F)
+    addDataFrame(ptm, ptm.sheet, row.names=F, showNA=F)
 }else{
     dnm.sheet <- createSheet(outwb, sheetName = "pDNM")
     hem.sheet <- createSheet(outwb, sheetName = "pHEM")
@@ -372,8 +452,10 @@ samp.chet.tierOne <- chet[which(chet$Child==samp),]
 samp.tierTwo <- tier2[which(tier2$Child==samp),]
 samp.kv <- kv[which(kv$Sample.Name==samp),]
 samp.t2lof <- t2lof[which(t2lof$Sample.Name==samp),]
+samp.ptm <- t2lof[which(ptm$Sample.Name..child.==samp),]
 samp.kv.genes <- unique(c(as.vector(kv[which(kv$Sample.Name==samp),]$Gene.Name)))
 samp.t2lof.genes <- unique(c(as.vector(t2lof[which(t2lof$Sample.Name==samp),]$Gene.Name)))
+samp.ptm.genes <- unique(c(as.vector(ptm[which(ptm$Sample.Name..child.==samp),]$Gene.Name)))
 
 
 if(opt$summary){writeSummary(samp.dnm.tierOne,samp.hom.tierOne,samp.hem.tierOne,samp.chet.tierOne,samp.tierTwo,dirname(opt$out))}
@@ -382,6 +464,9 @@ samp.dnm.tierOne$Gene.Name <- lapply(samp.dnm.tierOne$Gene.Name,function(x){past
 samp.hom.tierOne$Gene.Name <- lapply(samp.hom.tierOne$Gene.Name,function(x){paste0(gsub("'","",x),"(HO)")})
 samp.hem.tierOne$Gene.Name <- lapply(samp.hem.tierOne$Gene.Name,function(x){paste0(gsub("'","",x),"(HE)")})
 samp.chet.tierOne$Gene.Name <- lapply(samp.chet.tierOne$Gene.Name,function(x){paste0(gsub("'","",x),"(CH)")})
+samp.kv.genes <- lapply(samp.kv.genes,function(x){paste0(gsub("'","",x),"(KV)")})
+samp.t2lof.genes <- lapply(samp.t2lof.genes,function(x){paste0(gsub("'","",x),"(HI)")})
+samp.ptm.genes <- lapply(samp.ptm.genes,function(x){paste0(gsub("'","",x),"(PM)")})
 
 #HZ OMIM
 samp.dnm.hzo <- samp.dnm.tierOne[which((samp.dnm.tierOne$Polyphen.Humvar.Score >= .95  | 
@@ -547,13 +632,13 @@ samp.tier2gcClinicalOMIM <- unique(gsub("'","",c(as.vector(tier2[which(tier2$Chi
 samp.tier2gcClinicalOMIM <- c(samp.tier2gcClinicalOMIM[!samp.tier2gcClinicalOMIM %in% samp.gcClinicalOMIM],"-")
 samp.tier2gcClinicalOMIM <- c(samp.tier2gcClinicalOMIM[!samp.tier2gcClinicalOMIM %in% samp.gcClinicalnonOMIM],"-")
 }
-sum <- rbind(sum,c(samp,Ndnm,Nhem,Nhom,Nchet,"",paste(samp.hze,collapse="\n"),paste(samp.hzo,collapse="\n"),paste(samp.clin,collapse="\n"),paste(samp.LoF,collapse="\n"),gsub("^\n*([^)]*\\)?)\n*$","\\1",paste(samp.KnownVar,collapse="\n")),paste(gsub("'","",samp.kv.genes),collapse="\n"),paste(gsub("'","",samp.t2lof.genes),collapse="\n"),"","",gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalOMIM,sep=": ",collapse=": \n")))),gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.gcClinicalnonOMIM,sep=": ",collapse=": \n")))),gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(samp.tier2gcClinicalOMIM,sep=": ",collapse=": \n"))))))
+sum <- rbind(sum,c(samp,Ndnm,Nhem,Nhom,Nchet,"",paste(samp.hze,collapse="\n"),paste(samp.hzo,collapse="\n"),paste(samp.clin,collapse="\n"),paste(samp.LoF,collapse="\n"),gsub("^\n*([^)]*\\)?)\n*$","\\1",paste(samp.KnownVar,collapse="\n")),"","",wrapFormat(samp.gcClinicalOMIM),wrapFormat(samp.gcClinicalnonOMIM),wrapFormat(samp.tier2gcClinicalOMIM),wrapFormat(c(paste(gsub("'","",samp.kv.genes)),paste(gsub("'","",samp.t2lof.genes)),paste(gsub("'","",samp.ptm.genes)),"-"))))
 }
 
 #Add in samples with no tier1/2 variants
 samps <- unique(dnm.data$Child)
 for(samp in samps[!samps %in% sum[,1]]){
-    sum <- rbind(sum,c(samp,"0","0","0","0","","","","","","","","","","","-","-","-"))
+    sum <- rbind(sum,c(samp,"0","0","0","0","","","","","","","","","-","-","-","-"))
 }
 sum <- sum[order(gsub(".*(f[0-9]*)","\\1",sum[,1])),]
 if(is.null(dim(sum))){sum <- t(as.matrix(sum))}
@@ -565,15 +650,14 @@ if(opt$pheno != "NULL"){
         sampPheno <- pheno[which(pheno$CHGVID == samp),]$DetailedPhenotype
         if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype}
         if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype}
-        sum[i,15] <- as.vector(sampPheno)
+        sum[i,13] <- as.vector(sampPheno)
     }
 }
 #Write Excel file
-
 #colnames(sum) <- c("diagseq","DNM","HEM","HOM","CHET","Ethn","HZ[E]","HZ[OMIM]","ClinGen/Var[LoF]","LoF depleted/pLI","KnownVar(PMID)","Candidate Genetic Diagnosis","Pheno","GC Clinical Fit(H/M/L)")
-sum <- rbind(c("diagseq","DNM","HEM","HOM","CHET","Ethn","HZ [E]","HZ [OMIM]","ClinGen / Var [LoF]","LoF depleted / pLI","KnownVar (PMID)","KnownVar TNT","Haploinsufficient TNT","Candidate Genetic Diagnosis","Pheno","OMIM GC Clinical Fit (H/M/L)","non-OMIM GC Clinical Fit (H/M/L)","Tier 2 OMIM Clinical Fit (H/M/L)"),sum)
+sum <- rbind(c("diagseq","DNM","HEM","HOM","CHET","Ethn","HZ [E]","HZ [OMIM]","ClinGen / Var [LoF]","LoF depleted / pLI","KnownVar (PMID)","Candidate Genetic Diagnosis","Pheno","OMIM GC Clinical Fit (H/M/L)","non-OMIM GC Clinical Fit (H/M/L)","Tier 2 OMIM Clinical Fit (H/M/L)","TNT OMIM Clinical Fit (H/M/L)"),sum)
 
-cellBlock <- CellBlock(sum.sheet,1,1,dim(sum)[1],dim(sum)[2])
+cellBlock <- CellBlock(sum.sheet,1,1,dim(sum)[1]+1,dim(sum)[2])
 colnames_style <- CellStyle(outwb) + Font(outwb,isBold=T) + Alignment(horizontal="ALIGN_CENTER",vertical="VERTICAL_CENTER")
 csWrap <- CellStyle(outwb) + Alignment(horizontal="ALIGN_CENTER",vertical="VERTICAL_CENTER",wrapText=T)
 csCenter <- CellStyle(outwb) + Alignment(horizontal="ALIGN_CENTER",vertical="VERTICAL_CENTER")
@@ -588,11 +672,11 @@ colname_border <- Border(color="black",position="BOTTOM",pen="BORDER_THICK")
 CB.setBorder(cellBlock,colname_border,1,1:dim(sum)[2])
 
 setRowHeight(getRows(sum.sheet,1),1,multiplier=3)
-for(col in c(1,16,17,18)){
+for(col in c(1,14,15,16,17)){
     setColumnWidth(sum.sheet,col,14)
 }
-setColumnWidth(sum.sheet,15,24)
-for(col in c(7:14)){
+setColumnWidth(sum.sheet,13,24)
+for(col in c(7:12)){
     setColumnWidth(sum.sheet,col,12)
 }
 for(col in c(2:6)){
@@ -600,19 +684,17 @@ for(col in c(2:6)){
 }
 redFill <- Fill(foregroundColor = "red", backgroundColor = "red")
 smallFont <- Font(outwb,heightInPoints=10)
-for(col in c(7:13)){
+for(col in c(7:11)){
     ind <- which(sum[,col] != "")
     if(length(ind) > 0){CB.setFill(cellBlock, redFill, ind, col)}
 }
+
 ind <- which(sum[,8] != "")
 CB.setFill(cellBlock, redFill, ind, 8)
 grayFill <- Fill(foregroundColor = "gray")
 CB.setFill(cellBlock, grayFill, 1,6:dim(sum)[2])
-CB.setFont(cellBlock, smallFont, 2:dim(sum)[1],15)
+CB.setFont(cellBlock, smallFont, 2:dim(sum)[1],13)
 CB.setFont(cellBlock, smallFont, 1, 2:5)
-#for(col in c(2:5)){
-#    CB.setFont(cellBlock,0,col)
-#}
 
 excelColumn<- function(num){
     name <- "" 
@@ -631,9 +713,23 @@ addAutoFilter(hem.sheet,paste0("A:",excelColumn(dim(hem)[2])))
 addAutoFilter(chet.sheet,paste0("A:",excelColumn(dim(chet)[2])))
 
 createFreezePane(dnm.sheet,2,5)
+highlightCCDSx(dnm,dnmCellBlock)
 createFreezePane(hom.sheet,2,5)
+highlightCCDSx(hom,homCellBlock)
 createFreezePane(hem.sheet,2,5)
+highlightCCDSx(hem,hemCellBlock)
 createFreezePane(chet.sheet,2,6)
+highlightCCDSx(chet,chetCellBlock,T)
+createFreezePane(tier2.sheet,2,5)
+highlightCCDSx(tier2,tier2CellBlock)
+createFreezePane(tier2.chet.sheet,2,6)
+highlightCCDSx(tier2.chet,tier2ChetCellBlock,T)
+createFreezePane(kv.sheet,2,5)
+highlightCCDSx(kv,kvCellBlock)
+createFreezePane(t2lof.sheet,2,5)
+highlightCCDSx(t2lof,t2lofCellBlock)
+createFreezePane(ptm.sheet,2,5)
+highlightCCDSx(ptm,ptmCellBlock)
 if(!opt$nontrio){
 createFreezePane(tier2.sheet,2,5)
 createFreezePane(tier2.chet.sheet,2,6)
