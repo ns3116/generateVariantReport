@@ -7,6 +7,7 @@ writeDNM <- function(dnm,rtf){
     colnames(dnm) <- gsub("OMIM.Disease","OMIM.Disease",colnames(dnm))
     colnames(dnm) <- gsub("MGI_desc","MGI.Essential",colnames(dnm))
     colnames(dnm) <- gsub("HGMD.Class","HGMD.Class",colnames(dnm))
+    colnames(dnm) <- gsub("Het.Binomial.P..child.","Het.Binomial.P",colnames(dnm))
     for(i in 1:dim(dnm)[1]){
         setFontSize(rtf,12)
         gene = gsub("'","",dnm[i,]$Gene.Name)
@@ -30,6 +31,14 @@ writeDNM <- function(dnm,rtf){
            addText(rtf,paste0("This variant is listed as ",tolower(dnm[i,]$ClinVar.Clinical.Significance)," in ClinVar. "))}
         if(!is.na(dnm[i,]$HGMD.Class)){
             addText(rtf,paste0("This variant is listed as ",dnm[i,]$HGMD.Class," in HGMD. "))}
+        if(grepl("0", dnm[i,]$X.Transcripts)){
+            addText(rtf,"This is a non-CCDS variant.  ")}
+        if(!is.na(dnm[i,]$Exon) & eval(parse(text=as.vector(dnm[i,]$Exon))) == 1){
+            addText(rtf,"This variant is in the last exon of the transcript.  ")}
+        if(is.na(dnm[i,]$ExAC.Sample.Covered.10x) | dnm[i,]$ExAC.Sample.Covered.10x < 10000){
+            addText(rtf,paste0("This variant is only covered in ",dnm[i,]$ExAC.Sample.Covered.10x," samples in ExAC.  "))}
+        if(dnm[i,]$Het.Binomial.P < 0.05){
+            addText(rtf,paste0("This variant appears to mosaic with a binomial p-value of ",dnm[i,]$Het.Binomial.P,".  "))} 
         addText(rtf,"\n")
         endParagraph(rtf)
     }
@@ -53,6 +62,8 @@ writeCHET <- function(chet,rtf){
            addText(rtf,paste0(gene," is an OMIM disease gene associated with ",gsub(" \\|",", and", chet[i,]$OMIM.Disease.1),adj,". "))}
         else if(!is.na(chet[i,]$MGI.Essential.1) & chet[i,]$MGI.Essential.1 == 1){addText(rtf,paste0(gene," is an essential gene. "))}
         addText(rtf,"\n")
+        
+#First variant
         if((chet[i,]$Ctrl.MAF.1 == 0 | is.na(chet[i,]$Ctrl.MAF.1)) & (chet[i,]$Evs.All.Maf.1 == 0 | is.na(chet[i,]$Evs.All.Maf.1)) & (chet[i,]$ExAC.global.maf.1 == 0 | is.na(chet[i,]$ExAC.global.maf.1))){
             addText(rtf,"The first variant is absent from internal and external control samples. ")}
         else{addText(rtf,paste0("The first variant has a control MAF of ",chet[i,]$Ctrl.MAF.1*100,"% in IGM controls, ",chet[i,]$Evs.All.Maf.1*100,"% in EVS, and ",chet[i,]$ExAC.global.maf.1,"% in ExAC. "))}
@@ -63,6 +74,16 @@ writeCHET <- function(chet,rtf){
            addText(rtf,paste0("This variant is listed as ",tolower(chet[i,]$ClinVar.Clinical.Significance.1)," in ClinVar. "))}
         if(!is.na(chet[i,]$HGMD.Class.1)){
             addText(rtf,paste0("This variant is listed as ",chet[i,]$HGMD.Class.1," in HGMD. "))}
+        
+        if(grepl("0", chet[i,]$X.Transcripts.1)){
+            addText(rtf,"This is a non-CCDS variant.  ")}
+        if(!is.na(chet[i,]$Exon.1) & eval(parse(text=as.vector(chet[i,]$Exon.1))) == 1){
+            addText(rtf,"This variant is in the last exon of the transcript.  ")}
+        if(is.na(chet[i,]$ExAC.Sample.Covered.10x.1) | chet[i,]$ExAC.Sample.Covered.10x.1 < 10000){
+            addText(rtf,paste0("This variant is only covered in ",dnm[i,]$ExAC.Sample.Covered.10x," samples in ExAC.  "))}
+        if(chet[i,]$Het.Binomial.P..child..1 < 0.05){
+            addText(rtf,paste0("This variant appears to mosaic with a binomial p-value of ",chet[i,]$Het.Binomial.P..child..1,".  "))} 
+        #second variant
         addText(rtf,"\n")
         if((chet[i,]$Ctrl.MAF.2 == 0 | is.na(chet[i,]$Ctrl.MAF.2)) & (chet[i,]$Evs.All.Maf.2 == 0 | is.na(chet[i,]$Evs.All.Maf.2)) & (chet[i,]$ExAC.global.maf.2 == 0 | is.na(chet[i,]$ExAC.global.maf.2))){
             addText(rtf,"The second variant is absent from internal and external control samples. ")}
@@ -74,6 +95,15 @@ writeCHET <- function(chet,rtf){
            addText(rtf,paste0("This variant is listed as ",tolower(chet[i,]$ClinVar.Clinical.Significance.2)," in ClinVar. "))}
         if(!is.na(chet[i,]$HGMD.Class.2)){
             addText(rtf,paste0("This variant is listed as ",chet[i,]$HGMD.Class.2," in HGMD. "))}
+        
+        if(grepl("0", chet[i,]$X.Transcripts.2)){
+            addText(rtf,"This is a non-CCDS variant.  ")}
+        if(!is.na(chet[i,]$Exon.2) & eval(parse(text=as.vector(chet[i,]$Exon.2))) == 1){
+            addText(rtf,"This variant is in the last exon of the transcript.  ")}
+        if(is.na(chet[i,]$ExAC.Sample.Covered.10x.2) | chet[i,]$ExAC.Sample.Covered.10x.2 < 10000){
+            addText(rtf,paste0("This variant is only covered in ",dnm[i,]$ExAC.Sample.Covered.10x," samples in ExAC.  "))}
+        if(chet[i,]$Het.Binomial.P..child..2 < 0.05){
+            addText(rtf,paste0("This variant appears to mosaic with a binomial p-value of ",chet[i,]$Het.Binomial.P..child..2,".  "))} 
         addText(rtf,"\n")
         addText(rtf,"\n")
         endParagraph(rtf)
