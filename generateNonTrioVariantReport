@@ -42,6 +42,7 @@ nonTrioToTrio <- function(data){
 
 ##################################################################################################################
 scriptPath <- getScriptPath()
+#scriptPath <- "~/bin/generateVariantReport"
 
 #Source files
 source(file.path(scriptPath,"writeSampleSummaries.R"))
