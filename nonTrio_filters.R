@@ -41,7 +41,7 @@ Filter.for.tier2.general <- function(data) {
 
   #make sure all columns are present
   stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
-
+  
   #inclusion rule 1:
   R1 <- sapply(data[normalized.name("HGMD Class")], as.character)
   R1 <- sapply(R1, function(x) length(grep("DM",x)) > 0)

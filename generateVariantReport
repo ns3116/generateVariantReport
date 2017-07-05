@@ -36,12 +36,16 @@ highlightCCDSx <- function(data, myCellBlock, is.comphet = F){
     yellowFill <- Fill(foregroundColor = "yellow", backgroundColor = "yellow")
     if(!is.comphet){
         vidCol <- which(colnames(data) == "Variant.ID")
-        ind <- sapply(grep("0", data$X.Transcripts), function(x)x+1)
+        ind <- sapply(which(sapply(data$X.Transcripts, function(x) eval(parse(text=as.vector(x)))) < 1), function(x)x+1)
         col <- grep("X.Transcripts",colnames(data))
         if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol)
                             CB.setFill(myCellBlock, yellowFill, ind, col)}
-        ind <- sapply(which(sapply(data$Exon, function(x) eval(parse(text=as.vector(x)))) == 1), function(x)x+1)
+        ind <- sapply(which(sapply(data$Exon, function(x) eval(parse(text=as.vector(x)))) == 1 & data$Function %in% LoF_var), function(x)x+1)
         col <- which(colnames(data) == "Exon")
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(sub(".*c.([0-9]*).*","\\1",data$HGVSc) > data$ClinVar.Pathogenic.Last.Pathogenic.Location & data$Function %in% LoF_var), function(x)x+1)
+        col <- which(colnames(data) == "ClinVar.Pathogenic.Last.Pathogenic.Location")
         if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol)
                             CB.setFill(myCellBlock, yellowFill, ind, col)}
         ind <- sapply(which(data$ExAC.Sample.Covered.10x < 10000), function(x)x+1)
@@ -55,19 +59,27 @@ highlightCCDSx <- function(data, myCellBlock, is.comphet = F){
     }else{
         vidCol1 <- grep("Variant.ID.1",colnames(data))
         vidCol2 <- grep("Variant.ID.2",colnames(data))
-        ind <- sapply(grep("0", data$X.Transcripts.1), function(x)x+1)
+        ind <- sapply(which(sapply(data$Transcripts.1, function(x) eval(parse(text=as.vector(x)))) < 1), function(x)x+1)
         col <- grep("X.Transcripts.1",colnames(data))
         if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
                             CB.setFill(myCellBlock, yellowFill, ind, col)}
-        ind <- sapply(grep("0", data$X.Transcripts.2), function(x)x+1)
+        ind <- sapply(which(sapply(data$X.Transcripts.2, function(x) eval(parse(text=as.vector(x)))) < 1), function(x)x+1)
         col <- grep("X.Transcripts.2",colnames(data))
         if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol2)
                             CB.setFill(myCellBlock, yellowFill, ind, col)}
-        ind <- sapply(which(sapply(data$Exon.1, function(x) eval(parse(text=as.vector(x)))) == 1), function(x)x+1)
+        ind <- sapply(which(sapply(data$Exon.1, function(x) eval(parse(text=as.vector(x)))) == 1 & data$Function.1 %in% LoF_var), function(x)x+1)
         col <- which(colnames(data) == "Exon.1")
         if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
                             CB.setFill(myCellBlock, yellowFill, ind, col)}
-        ind <- sapply(which(sapply(data$Exon.2, function(x) eval(parse(text=as.vector(x)))) == 1), function(x)x+1)
+        ind <- sapply(which(sapply(data$Exon.2, function(x) eval(parse(text=as.vector(x)))) == 1 & data$Function.2 %in% LoF_var), function(x)x+1)
+        col <- which(colnames(data) == "Exon.2")
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol2)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(sub(".*c.([0-9]*).*","\\1",data$HGVSc.1) > data$ClinVar.Pathogenic.Last.Pathogenic.Location.1 & data$Function.1 %in% LoF_var), function(x)x+1)
+        col <- which(colnames(data) == "Exon.1")
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(sub(".*c.([0-9]*).*","\\1",data$HGVSc.2) > data$ClinVar.Pathogenic.Last.Pathogenic.Location.2 & data$Function.2 %in% LoF_var), function(x)x+1)
         col <- which(colnames(data) == "Exon.2")
         if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol2)
                             CB.setFill(myCellBlock, yellowFill, ind, col)}
@@ -241,7 +253,7 @@ data <- Filter.by.Denovo.Flag(dnm.data,'DE NOVO', strict = TRUE)
 dnm <- Filter.for.denovo(data)
 data <- Filter.by.Denovo.Flag(dnm.data,'DE NOVO', strict = FALSE)
 data <- Filter.by.Allele.Count(data,19)
-tier2 <- Filter.for.tier2(data)
+tier2 <- Filter.for.tier2(data,is.denovo=F)
 }
 dnm <- cbind(dnm,HGVSg(dnm))
 if(!opt$nontrio){
