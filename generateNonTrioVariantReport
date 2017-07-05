@@ -41,8 +41,8 @@ nonTrioToTrio <- function(data){
 }
 
 ##################################################################################################################
-scriptPath <- getScriptPath()
-#scriptPath <- "~/bin/generateVariantReport"
+#scriptPath <- getScriptPath()
+scriptPath <- "~/bin/generateVariantReport"
 
 #Source files
 source(file.path(scriptPath,"writeSampleSummaries.R"))
@@ -136,6 +136,12 @@ sum.sheet <- createSheet(outwb, sheetName = "Summary")
     prec.sheet <- createSheet(outwb, sheetName = "pREC-KVLoF")
     pchet.sheet <- createSheet(outwb, sheetName = "pCHET-KVLoF")
     pdnmd.sheet <- createSheet(outwb, sheetName = "pDNM-LoFD")
+    kvCellBlock <- CellBlock(kv.sheet,1,1,dim(kv)[1]+1,dim(kv)[2])
+    kv5CellBlock <- CellBlock(kv5.sheet,1,1,dim(kv5)[1]+1,dim(kv5)[2]) 
+    pdnmCellBlock <- CellBlock(pdnm.sheet,1,1,dim(pdnm)[1]+1,dim(pdnm)[2])
+    precCellBlock <- CellBlock(prec.sheet,1,1,dim(prec)[1]+1,dim(prec)[2])
+    pchetCellBlock <- CellBlock(pchet.sheet,1,1,dim(pchet)[1]+1,dim(pchet)[2])
+    pdnmdCellBlock <- CellBlock(pdnmd.sheet,1,1,dim(pdnmd)[1]+1,dim(pdnmd)[2])
     addDataFrame(kv, kv.sheet, row.names=F, showNA=F)
     addDataFrame(kv5, kv5.sheet, row.names=F, showNA=F)
     addDataFrame(pdnm, pdnm.sheet, row.names=F, showNA=F)
@@ -153,6 +159,76 @@ LoF_var <- c(
     "FRAME_SHIFT",
     "EXON_DELETED"
 )
+
+highlightCCDSx <- function(data, myCellBlock, is.comphet = F){
+    yellowFill <- Fill(foregroundColor = "yellow", backgroundColor = "yellow")
+    if(!is.comphet){
+        vidCol <- which(colnames(data) == "Variant.ID")
+        ind <- sapply(which(sapply(data$X.Transcripts, function(x) eval(parse(text=as.vector(x)))) < 1), function(x)x+1)
+        col <- grep("X.Transcripts",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(sapply(data$Exon, function(x) eval(parse(text=as.vector(x)))) == 1 & data$Function %in% LoF_var), function(x)x+1)
+        col <- which(colnames(data) == "Exon")
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(sub(".*c.([0-9]*).*","\\1",data$HGVSc) > data$ClinVar.Pathogenic.Last.Pathogenic.Location & data$Function %in% LoF_var), function(x)x+1)
+        col <- which(colnames(data) == "ClinVar.Pathogenic.Last.Pathogenic.Location")
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(data$ExAC.Sample.Covered.10x < 10000), function(x)x+1)
+        col <- grep("ExAC.Sample.Covered.10x",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(data$Het.Binomial.P..child. < 0.05), function(x)x+1)
+        col <- grep("Het.Binomial.P..child.",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+    }else{
+        vidCol1 <- grep("Variant.ID.1",colnames(data))
+        vidCol2 <- grep("Variant.ID.2",colnames(data))
+        ind <- sapply(which(sapply(data$Transcripts.1, function(x) eval(parse(text=as.vector(x)))) < 1), function(x)x+1)
+        col <- grep("X.Transcripts.1",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(sapply(data$X.Transcripts.2, function(x) eval(parse(text=as.vector(x)))) < 1), function(x)x+1)
+        col <- grep("X.Transcripts.2",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol2)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(sapply(data$Exon.1, function(x) eval(parse(text=as.vector(x)))) == 1 & data$Function.1 %in% LoF_var), function(x)x+1)
+        col <- which(colnames(data) == "Exon.1")
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(sapply(data$Exon.2, function(x) eval(parse(text=as.vector(x)))) == 1 & data$Function.2 %in% LoF_var), function(x)x+1)
+        col <- which(colnames(data) == "Exon.2")
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol2)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(sub(".*c.([0-9]*).*","\\1",data$HGVSc.1) > data$ClinVar.Pathogenic.Last.Pathogenic.Location.1 & data$Function.1 %in% LoF_var), function(x)x+1)
+        col <- which(colnames(data) == "Exon.1")
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(sub(".*c.([0-9]*).*","\\1",data$HGVSc.2) > data$ClinVar.Pathogenic.Last.Pathogenic.Location.2 & data$Function.2 %in% LoF_var), function(x)x+1)
+        col <- which(colnames(data) == "Exon.2")
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol2)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(data$ExAC.Sample.Covered.10x.1 < 10000), function(x)x+1)
+        col <- grep("ExAC.Sample.Covered.10x.1",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(data$ExAC.Sample.Covered.10x.2 < 10000), function(x)x+1)
+        col <- grep("ExAC.Sample.Covered.10x.2",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol2)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(data$Het.Binomial.P..child..1 < 0.05), function(x)x+1)
+        col <- grep("Het.Binomial.P..child..1",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+        ind <- sapply(which(data$Het.Binomial.P..child..2 < 0.05), function(x)x+1)
+        col <- grep("Het.Binomial.P..child..2",colnames(data))
+        if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol2)
+                            CB.setFill(myCellBlock, yellowFill, ind, col)}
+    }
+}
 
 #Create Summary Table
 for(samp in unique(c(as.vector(kv$Sample.Name),as.vector(kv5$Sample.Name),as.vector(pdnm$Sample.Name),as.vector(prec$Sample.Name),as.vector(pchet$Sample.Name),as.vector(pdnmd$Sample.Name)))){
@@ -194,9 +270,9 @@ if(opt$pheno != "NULL"){
     for(i in 1:dim(sum)[1]){
         samp <- sum[i,1]
         sampPheno <- pheno[which(pheno$CHGVID == samp),]$DetailedPhenotype
-        if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype}
-        if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype}
-        sum[i,14] <- as.vector(sampPheno)
+        if(is.na(sampPheno) | sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype}
+        if(is.na(sampPheno) | sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype}
+        sum[i,14] <- as.vector(sampPheno[1])
     }
 }
 #Write Excel file
@@ -259,8 +335,15 @@ addAutoFilter(prec.sheet,paste0("A:",excelColumn(dim(prec)[2])))
 
 createFreezePane(sum.sheet,2,5)
 createFreezePane(kv.sheet,2,5)
+highlightCCDSx(kv,kvCellBlock)
+createFreezePane(kv5.sheet,2,5)
+highlightCCDSx(kv5,kv5CellBlock)
 createFreezePane(pdnm.sheet,2,5)
+highlightCCDSx(pdnm,pdnmCellBlock)
 createFreezePane(prec.sheet,2,6)
+highlightCCDSx(prec,precCellBlock)
+createFreezePane(pdnmd.sheet,2,5)
+highlightCCDSx(pdnmd,pdnmdCellBlock)
 
 saveWorkbook(outwb, opt$out)
 closeAllConnections()
