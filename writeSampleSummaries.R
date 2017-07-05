@@ -128,7 +128,7 @@ writeSummary <- function(dnm,hom,hem,chet,tier2,dir){
     return
 }
 
-writeNonTrioSummary <- function(samp.kv,samp.kv5,samp.pdnm,samp.prec,samp.pchet,samp.lofd,dir){
+writeNonTrioSummary <- function(samp.kv,samp.kv5,samp.pdnm = samp.kv[FALSE,],samp.prec = samp.kv[FALSE,],samp.pchet = samp.kv[FALSE,],samp.lofd = samp.kv[FALSE,],dir=dir){
     dir.create(file.path(dir,"Sample_Summaries"),showWarnings=F)
     allSamps <- c(as.vector(samp.kv$Sample.Name),as.vector(samp.kv5$Sample.Name),as.vector(samp.pdnm$Sample.Name),as.vector(samp.prec$Sample.Name),as.vector(samp.pchet$Sample.Name))
     if(length(allSamps) == 0){return}
