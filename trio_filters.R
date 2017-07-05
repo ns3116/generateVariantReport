@@ -767,16 +767,6 @@ stopifnot(length(setdiff(normalized.name(columns),colnames(data))) ==0)
 #steps can be merged or splitted
 #but merged steps can usually perform fasted
 
-#step 4:
-data <- data[(is.na(data[normalized.name("QC Fail Ctrl")])
-            | data[normalized.name("QC Fail Ctrl")] == 0)                   &
-            (is.na(data[normalized.name("Ctrl MAF")])
-              | data[normalized.name("Ctrl MAF")]  == 0)                    &
-            is.na(data[normalized.name("Evs All Genotype Count")])          &
-            is.na(data[normalized.name("ExAC global gts")])
-           ,]
-if (dim(data)[1] ==0) { return(data)}
-
 #step 1: 
 data   <- data[is.na(data[normalized.name("Percent Read Alt (child)")])
              | data[normalized.name("Percent Read Alt (child)")] >= 0.2 
@@ -801,6 +791,21 @@ data <- data[(is.na(data[normalized.name("Genotype Qual GQ (child)")])
            (is.na(data[normalized.name("Evs Filter Status")])
               | data[normalized.name("Evs Filter Status")] != "FAIL") 
           ,]
+if (dim(data)[1] ==0) { return(data)}
+
+#step 5:
+data <- data[(is.na(data[normalized.name("QC Fail Ctrl")])
+            | data[normalized.name("QC Fail Ctrl")] == 0)           
+            ,]
+if (dim(data)[1] ==0) { return(data)}
+
+#step 4:
+data <- data[((is.na(data[normalized.name("Ctrl MAF")])
+              | data[normalized.name("Ctrl MAF")]  == 0)                    &
+            is.na(data[normalized.name("Evs All Genotype Count")])          &
+            is.na(data[normalized.name("ExAC global gts")])) |
+            !is.na(data$OMIM.Disease)
+           ,]
 if (dim(data)[1] ==0) { return(data)}
 
 #step 3: //de novo flag is not filtered here. Which can be filtered separately
@@ -1000,7 +1005,7 @@ result <- data[All,]
 }
 
 
-Filter.for.tier2 <- function(data, is.comphet = FALSE) {
+Filter.for.tier2 <- function(data, is.comphet = FALSE, is.denovo = FALSE) {
 if (is.comphet) {
 #check for correct columns
 columns <- c("HGMD Class (#1)","HGMD Class (#2)", "HGMD indel 9bpflanks (#1)", "HGMD indel 9bpflanks (#2)",
@@ -1069,6 +1074,8 @@ suppressWarnings(temp <- sapply(data[normalized.name("Clinvar Pathogenic CNV Cou
 temp[is.na(temp)] <- 0
 R8 <- (Functional.1 | Functional.2) & (temp > 0)
 
+R.all <- R1 | R2 | R3 | R4 | R5 | R6 | R7 | R8
+
 } else {
 #check for correct columns
 columns <- c("HGMD.Class", "HGMD.indel.9bpflanks", "ClinVar.pathogenic.indels",
@@ -1125,9 +1132,14 @@ suppressWarnings(temp <- sapply(data[normalized.name("Clinvar.Pathogenic.CNV.Cou
 temp[is.na(temp)] <- 0
 R8 <- Functional & (temp > 0)
 
-}
-
 R.all <- R1 | R2 | R3 | R4 | R5 | R6 | R7 | R8
+
+#inclusion rule de novo
+if(is.denovo){
+    R9 <- !is.na(data$OMIM.Disease)
+    R.all <- R1 | R2 | R3 | R4 | R5 | R6 | R7 | R8 | R9
+}
+}
 data <- data[R.all,]
 data
 }
