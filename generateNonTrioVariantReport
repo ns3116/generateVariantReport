@@ -41,8 +41,7 @@ nonTrioToTrio <- function(data){
 }
 
 ##################################################################################################################
-#scriptPath <- getScriptPath()
-scriptPath <- "~/bin/generateVariantReport"
+scriptPath <- getScriptPath()
 
 #Source files
 source(file.path(scriptPath,"writeSampleSummaries.R"))
@@ -51,7 +50,7 @@ source(file.path(scriptPath,"writeSampleSummaries.R"))
 option_list = list(
     make_option(c("-c","--csv"), type="character", default="nonTrio/nonTrio_genotypes.csv", help="Input csv from ATAV output file [default = nonTrio/nonTrio_genotypes.csv]"),
     make_option(c("-o","--out"), type="character", default="nonTrio_variant_report.xlsx", help="Report output file [default  = nonTrio_variant_report.xlsx]"),
-    make_option(c("-m","--mgi"), type="character", default=paste(scriptPath,"/MGI_essential.txt",sep=""), help="MGI essiential gene list [default  = <Script Path>/MGI_essential.txt]", dest="MGIe"),
+    make_option(c("--pt"), type="character", default="nonTrioParent/nonTrioParent_genotypes.csv", help="Parent genotypes ATAV output file [default = nonTrioParent/nonTrioParent_genotypes.csv]"),
     make_option(c("-s","--summary"), type="logical", default=F, action="store_true", help="Flag to generate individual sample text summaries [default  = False"),
     make_option(c("-p","--pheno"), type="character", default="NULL", help="seqDB file containing sample phenotypes [default  = NULL]"),
     make_option(c("-f","--filter"), type="integer", default="5", help="Number of control alleles allowed by the filter [default  = 5]"),
@@ -63,16 +62,13 @@ option_list = list(
 opt_parser = OptionParser(option_list=option_list)
 opt = parse_args(opt_parser)
 
-#read csv file as dataframe for dnm, chet, and add_anno, and MGI essential gene list
+#read csv file as dataframe for dnm, chet, and add_anno
 source(paste(scriptPath,"/nonTrio_filters.R",sep=""))
 
-MGIe <- read.table(opt$MGIe,header=T)
 
 #Tier 1 filtering DNM 
 #Merging additional annotations to table
 input.data = read.csv(opt$csv,na.strings="NA")
-input.data <- cbind(input.data, gsub("'","",input.data$Gene.Name) %in% MGIe$Gene_symbol)
-colnames(input.data)[dim(input.data)[2]] <- "MGI.Essential"
 col.id <- grep("Gene.Name",colnames(input.data))
 new.pos <- 3
 input.data <- input.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(input.data))[-(col.id-new.pos+1)])]
@@ -127,6 +123,27 @@ prec <- read.csv("prec_kv_lof.csv.vep",na.strings="NA")
 if(dim(prec)[1]>0){prec <- cbind(prec, paste0(prec$Variant.ID,"\nnonTrio\n",prec$HGVSc,"\n",prec$HGVSp,"\n",prec$Samtools.Raw.Coverage,"\n",prec$Percent.Alt.Read,"\n",prec$Genotype.Qual.GQ))
 colnames(prec)[dim(prec)[2]] <- "PGM.Info"}
 
+#Add parent sheet 
+#Merging additional annotations to table
+#if(!opt$noVEP){system(paste0(scriptPath,"/append_vep.py -i ",opt$pt," --append_file ",opt$pt, ".vep --force_append"),wait=T)}
+pt.data = read.csv(paste0(opt$pt),na.strings="NA")
+pt.data <- cbind(pt.data, paste0(pt.data$Variant.ID,"\nnonTrio\n",pt.data$HGVSc,"\n",pt.data$HGVSp,"\n",pt.data$Samtools.Raw.Coverage,"\n",pt.data$Percent.Read.Alt,"\n",pt.data$Genotype.Qual.GQ))
+colnames(pt.data)[dim(pt.data)[2]] <- "PGM.Info"
+col.id <- grep("Sample.Name",colnames(pt.data))
+new.pos <- 1
+pt.data <- pt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(pt.data))[-(col.id-new.pos+1)])]
+col.id <- grep("Gene.Name",colnames(pt.data))
+new.pos <- 3
+pt.data <- pt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(pt.data))[-(col.id-new.pos+1)])]
+col.id <- grep("Function",colnames(pt.data))
+new.pos <- 4
+pt.data <- pt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(pt.data))[-(col.id-new.pos+1)])]
+
+data <- Filter.by.Allele.Count(pt.data,5)
+pt <- Filter.for.tier2.pdnm.kv(data)
+data <- Filter.by.Allele.Count(pt.data,5)
+pt <- rbind(pt,Filter.for.tier2.pdnm.lof(data))
+
 #Create workbook and sheets
 outwb <- createWorkbook()
 sum.sheet <- createSheet(outwb, sheetName = "Summary")
@@ -136,18 +153,21 @@ sum.sheet <- createSheet(outwb, sheetName = "Summary")
     prec.sheet <- createSheet(outwb, sheetName = "pREC-KVLoF")
     pchet.sheet <- createSheet(outwb, sheetName = "pCHET-KVLoF")
     pdnmd.sheet <- createSheet(outwb, sheetName = "pDNM-LoFD")
+    pt.sheet <- createSheet(outwb, sheetName = "Parent")
     kvCellBlock <- CellBlock(kv.sheet,1,1,dim(kv)[1]+1,dim(kv)[2])
     kv5CellBlock <- CellBlock(kv5.sheet,1,1,dim(kv5)[1]+1,dim(kv5)[2]) 
     pdnmCellBlock <- CellBlock(pdnm.sheet,1,1,dim(pdnm)[1]+1,dim(pdnm)[2])
     precCellBlock <- CellBlock(prec.sheet,1,1,dim(prec)[1]+1,dim(prec)[2])
     pchetCellBlock <- CellBlock(pchet.sheet,1,1,dim(pchet)[1]+1,dim(pchet)[2])
     pdnmdCellBlock <- CellBlock(pdnmd.sheet,1,1,dim(pdnmd)[1]+1,dim(pdnmd)[2])
+    ptCellBlock <- CellBlock(pt.sheet,1,1,dim(pt)[1]+1,dim(pt)[2])
     addDataFrame(kv, kv.sheet, row.names=F, showNA=F)
     addDataFrame(kv5, kv5.sheet, row.names=F, showNA=F)
     addDataFrame(pdnm, pdnm.sheet, row.names=F, showNA=F)
     addDataFrame(prec, prec.sheet, row.names=F, showNA=F)
     addDataFrame(pchet, pchet.sheet, row.names=F, showNA=F)
     addDataFrame(pdnmd, pdnmd.sheet, row.names=F, showNA=F)
+    addDataFrame(pt, pt.sheet, row.names=F, showNA=F)
 
 #LoFd <- read.table(opt$LoFd,header=T)
 sum = NULL
@@ -344,6 +364,7 @@ createFreezePane(prec.sheet,2,6)
 highlightCCDSx(prec,precCellBlock)
 createFreezePane(pdnmd.sheet,2,5)
 highlightCCDSx(pdnmd,pdnmdCellBlock)
+createFreezePane(pt.sheet,2,5)
 
 saveWorkbook(outwb, opt$out)
 closeAllConnections()

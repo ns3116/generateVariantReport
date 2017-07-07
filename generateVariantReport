@@ -195,8 +195,7 @@ return(data)
 }
 
 ##################################################################################################################
-#scriptPath <- getScriptPath()
-scriptPath <- "~/bin/generateVariantReport"
+scriptPath <- getScriptPath()
 
 #Source files
 source(file.path(scriptPath,"writeSampleSummaries.R"))
@@ -206,9 +205,9 @@ option_list = list(
 make_option(c("-c","--cmphet"), type="character", default="trio/trio_comphet.csv", help="Compound Heterozygous ATAV output file [default = trio/trio_comphet.csv]"),
 make_option(c("-d","--dnm"), type="character", default="trio/trio_denovoandhom.csv", help="Denovo Mutation ATAV output file [default = trio/trio_denovoandhom.csv]"),
 make_option(c("-t","--tnt"), type="character", default="trioNonTrio/trioNonTrio_genotypes.csv", help="trioNonTrio ATAV output file [default = trioNonTrio/trioNonTrio_genotypes.csv]"),
+make_option(c("--pt"), type="character", default="parent/parent_genotypes.csv", help="Parent genotypes ATAV output file [default = parent/parent_genotypes.csv]"),
 make_option(c("--ptm"), type="character", default="ptlMcsm/ptlMcsm_parental.mosaic.csv", help="Parental mosaic ATAV output file [default = ptlMcsm/ptlMcsm_parental.mosaic.csv]"),
 make_option(c("-o","--out"), type="character", default="variant_report.xlsx", help="Report output file [default  = variant_report.xlsx]"),
-make_option(c("-m","--mgi"), type="character", default=paste(scriptPath,"/MGI_essential.txt",sep=""), help="MGI essiential gene list [default  = <Script Path>/MGI_essential.txt]", dest="MGIe"),
 make_option(c("-s","--summary"), type="logical", default=F, action="store_true", help="Flag to generate individual sample text summaries [default  = False"),
 make_option(c("-p","--pheno"), type="character", default="NULL", help="seqDB file containing sample phenotypes [default  = NULL]"),
 make_option(c("--nochet"), type="logical", default=F, action="store_true", help="Flag to process files as a non-trio, imposing additional filters to the tier one rules [default  = False]"),
@@ -219,18 +218,15 @@ make_option(c("-n","--nontrio"), type="logical", default=F, action="store_true",
 
 opt_parser = OptionParser(option_list=option_list)
 opt = parse_args(opt_parser)
-#read csv file as dataframe for dnm, chet, and add_anno, and MGI essential gene list
+#read csv file as dataframe for dnm, chet, and add_anno
 source(paste(scriptPath,"/trio_filters.R",sep=""))
 
-MGIe <- read.table(opt$MGIe,header=T)
 ctrl_counts <- read.table(paste0(scriptPath,"/ctrl_counts/gene_counts.txt"),header=T)
 case_counts <- read.table(paste0(scriptPath,"/case_counts/gene_counts.txt"),header=T)
 if(!opt$noVEP){system(paste0(scriptPath,"/append_vep.py -i ",opt$dnm," --append_file ",opt$dnm, ".vep --force_append"),wait=T)}
 #Tier 1 filtering DNM 
 #Merging additional annotations to table
 dnm.data = read.csv(paste0(opt$dnm,".vep"),na.strings="NA")
-dnm.data <- cbind(dnm.data, gsub("'","",dnm.data$Gene.Name) %in% MGIe$Gene_symbol)
-colnames(dnm.data)[dim(dnm.data)[2]] <- "MGI.Essential"
 dnm.data <- merge(dnm.data, ctrl_counts, by.x = "Gene.Name", by.y = "Gene", all.x = T)
 dnm.data <- merge(dnm.data, case_counts, by.x = "Gene.Name", by.y = "Gene", all.x = T)
 dnm.data <- cbind(dnm.data, paste0(dnm.data$Variant.ID,"\n",dnm.data$Denovo.Flag,"\n",dnm.data$HGVSc,"\n",dnm.data$HGVSp,"\n",dnm.data$Samtools.Raw.Coverage..child.,"\n",dnm.data$Percent.Read.Alt..child.,"\n",dnm.data$Genotype.Qual.GQ..child.))
@@ -303,8 +299,6 @@ if(opt$nontrio | opt$nochet){
 #Filtering CHET and merging additional annotations to table for both variants
 if(!opt$noVEP){system(paste0(scriptPath,"/append_vep.py -i ",opt$cmphet," --append_file ",opt$cmphet, ".vep --force_append"),wait=T)}
 chet.data = read.csv(paste0(opt$cmphet,".vep"),na.strings="NA") 
-chet.data <- cbind(chet.data, gsub("'","",chet.data$Gene.Name) %in% MGIe$Gene_symbol)
-colnames(chet.data)[dim(chet.data)[2]] <- "MGI.Essential"
 chet.data <- merge(chet.data, ctrl_counts, by.x = "Gene.Name", by.y = "Gene", all.x = T)
 chet.data <- merge(chet.data, case_counts, by.x = "Gene.Name", by.y = "Gene", all.x = T)
 chet.data <- cbind(chet.data, paste0(chet.data$Variant.ID...1.,"\n",chet.data$Comp.Het.Flag,"\n",chet.data$HGVSc...1.,"\n",chet.data$HGVSp...1.,"\n",chet.data$Samtools.Raw.Coverage..child....1.,"\n",chet.data$Percent.Read.Alt..child....1.,"\n",chet.data$Genotype.Qual.GQ..child....1.)) #,chet.data$Genotype.Qual.GQ..child....1.))
@@ -352,8 +346,6 @@ if(!opt$noVEP){system(paste0(scriptPath,"/append_vep.py -i ",opt$ptm," --append_
 #Tier 1 Parental mosaic 
 #Merging additional annotations to table
 ptm.data = read.csv(paste0(opt$ptm,".vep"),na.strings="NA")
-ptm.data <- cbind(ptm.data, gsub("'","",ptm.data$Gene.Name) %in% MGIe$Gene_symbol)
-colnames(ptm.data)[dim(ptm.data)[2]] <- "MGI.Essential"
 ptm.data <- merge(ptm.data, ctrl_counts, by.x = "Gene.Name", by.y = "Gene", all.x = T)
 ptm.data <- merge(ptm.data, case_counts, by.x = "Gene.Name", by.y = "Gene", all.x = T)
 colnames(ptm.data)[dim(ptm.data)[2]] <- "PGM.Info"
@@ -370,8 +362,6 @@ source(paste(scriptPath,"/nonTrio_filters.R",sep=""))
 #Merging additional annotations to table
 if(!opt$noVEP){system(paste0(scriptPath,"/append_vep.py -i ",opt$tnt," --append_file ",opt$tnt, ".vep --force_append"),wait=T)}
 tnt.data = read.csv(paste0(opt$tnt,".vep"),na.strings="NA")
-tnt.data <- cbind(tnt.data, gsub("'","",tnt.data$Gene.Name) %in% MGIe$Gene_symbol)
-colnames(tnt.data)[dim(tnt.data)[2]] <- "MGI.Essential"
 tnt.data <- cbind(tnt.data, paste0(tnt.data$Variant.ID,"\nnonTrio\n",tnt.data$HGVSc,"\n",tnt.data$HGVSp,"\n",tnt.data$Samtools.Raw.Coverage,"\n",tnt.data$Percent.Read.Alt,"\n",tnt.data$Genotype.Qual.GQ))
 colnames(tnt.data)[dim(tnt.data)[2]] <- "PGM.Info"
 col.id <- grep("Sample.Name",colnames(tnt.data))
@@ -390,6 +380,26 @@ data <- Filter.by.Allele.Count(tnt.data,0)
 t2lof <- Filter.for.tier2.pdnm.lof(data)
 write.csv(kv,file = "kvTNT.csv")
 write.csv(t2lof, file = "t2lof.csv")
+#Add trioNonTrio sheet 
+#Merging additional annotations to table
+#if(!opt$noVEP){system(paste0(scriptPath,"/append_vep.py -i ",opt$pt," --append_file ",opt$pt, ".vep --force_append"),wait=T)}
+pt.data = read.csv(paste0(opt$pt),na.strings="NA")
+pt.data <- cbind(pt.data, paste0(pt.data$Variant.ID,"\nnonTrio\n",pt.data$HGVSc,"\n",pt.data$HGVSp,"\n",pt.data$Samtools.Raw.Coverage,"\n",pt.data$Percent.Read.Alt,"\n",pt.data$Genotype.Qual.GQ))
+colnames(pt.data)[dim(pt.data)[2]] <- "PGM.Info"
+col.id <- grep("Sample.Name",colnames(pt.data))
+new.pos <- 1
+pt.data <- pt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(pt.data))[-(col.id-new.pos+1)])]
+col.id <- grep("Gene.Name",colnames(pt.data))
+new.pos <- 3
+pt.data <- pt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(pt.data))[-(col.id-new.pos+1)])]
+col.id <- grep("Function",colnames(pt.data))
+new.pos <- 4
+pt.data <- pt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(pt.data))[-(col.id-new.pos+1)])]
+
+data <- Filter.by.Allele.Count(pt.data,5)
+pt <- Filter.for.tier2.pdnm.kv(data)
+data <- Filter.by.Allele.Count(pt.data,5)
+pt <- rbind(pt,Filter.for.tier2.pdnm.lof(data))
 
 #Create workbook and sheets
 outwb <- createWorkbook()
@@ -404,6 +414,7 @@ if(!opt$nontrio){
     kv.sheet <- createSheet(outwb, sheetName = "TNT KV")
     t2lof.sheet <- createSheet(outwb, sheetName = "TNT LoF")
     ptm.sheet <- createSheet(outwb, sheetName = "Ptl MSC")
+    pt.sheet <- createSheet(outwb, sheetName = "Parent")
     dnmCellBlock <- CellBlock(dnm.sheet,1,1,dim(dnm)[1]+1,dim(dnm)[2])
     hemCellBlock <- CellBlock(hem.sheet,1,1,dim(hem)[1]+1,dim(hem)[2])
     homCellBlock <- CellBlock(hom.sheet,1,1,dim(hom)[1]+1,dim(hom)[2])
@@ -413,6 +424,7 @@ if(!opt$nontrio){
     kvCellBlock <- CellBlock(kv.sheet,1,1,dim(kv)[1]+1,dim(kv)[2])
     t2lofCellBlock <- CellBlock(t2lof.sheet,1,1,dim(t2lof)[1]+1,dim(t2lof)[2])
     ptmCellBlock <- CellBlock(ptm.sheet,1,1,dim(ptm)[1]+1,dim(ptm)[2])
+    ptCellBlock <- CellBlock(pt.sheet,1,1,dim(pt)[1]+1,dim(pt)[2])
     addDataFrame(dnm, dnm.sheet, row.names=F, showNA=F)
     addDataFrame(hem, hem.sheet, row.names=F, showNA=F)
     addDataFrame(hom, hom.sheet, row.names=F, showNA=F)
@@ -422,6 +434,7 @@ if(!opt$nontrio){
     addDataFrame(kv, kv.sheet, row.names=F, showNA=F)
     addDataFrame(t2lof, t2lof.sheet, row.names=F, showNA=F)
     addDataFrame(ptm, ptm.sheet, row.names=F, showNA=F)
+    addDataFrame(pt, pt.sheet, row.names=F, showNA=F)
 }else{
     dnm.sheet <- createSheet(outwb, sheetName = "pDNM")
     hem.sheet <- createSheet(outwb, sheetName = "pHEM")
@@ -742,6 +755,7 @@ createFreezePane(t2lof.sheet,2,5)
 highlightCCDSx(t2lof,t2lofCellBlock)
 createFreezePane(ptm.sheet,2,5)
 highlightCCDSx(ptm,ptmCellBlock)
+createFreezePane(pt.sheet,2,5)
 if(!opt$nontrio){
 createFreezePane(tier2.sheet,2,5)
 createFreezePane(tier2.chet.sheet,2,6)
