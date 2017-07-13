@@ -199,11 +199,13 @@ Filter.for.tier2.pdnm.kv <- function(data) {
 
   ER3 <- !(ER31 | ER32 | ER33 | ER34)
   data <- data[ER3,]
-
+  
   #Exclusion rule 4:
-  suppressWarnings(temp <- sapply(data[normalized.name("Percent Alt Read")], as.numeric))
-  temp[is.na(temp)] <- 0
-  ER4 <- temp >= 0.2
+  ER4 <- (is.na(data[normalized.name("Percent Alt Read")])
+            | data[normalized.name("Percent Alt Read")] >= 0.2 
+            | (data[normalized.name("Pass Fail Status")] == "pass"
+            &  (data[normalized.name("Variant Type")] == "snv"
+            | data[normalized.name("Het Binomial P")] > 0.01)))
   data <- data[ER4,]
 
   #Exclusion rule 5:
