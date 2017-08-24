@@ -356,7 +356,6 @@ col.id <- grep("Function",colnames(ptm.data))
 new.pos <- 4
 ptm.data <- ptm.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(ptm.data))[-(col.id-new.pos+1)])]
 ptm <- ptm.data
-
 source(paste(scriptPath,"/nonTrio_filters.R",sep=""))
 #Tier 3 trioNonTrio  
 #Merging additional annotations to table
@@ -483,7 +482,10 @@ samp.t2lof.genes <- unique(c(as.vector(t2lof[which(t2lof$Sample.Name==samp),]$Ge
 samp.ptm.genes <- unique(c(as.vector(ptm[which(ptm$Sample.Name..child.==samp),]$Gene.Name)))
 
 
-if(opt$summary){writeSummary(samp.dnm.tierOne,samp.hom.tierOne,samp.hem.tierOne,samp.chet.tierOne,samp.tierTwo,dirname(opt$out))}
+if(opt$summary){
+    writeSummary(samp.dnm.tierOne,samp.hom.tierOne,samp.hem.tierOne,samp.chet.tierOne,samp.tierTwo,dirname(opt$out))
+    writeNonTrioSummary(samp.kv,samp.t2lof,dir=dirname(opt$out))    
+    }
 #Add new variant/genotype type
 samp.dnm.tierOne$Gene.Name <- lapply(samp.dnm.tierOne$Gene.Name,function(x){paste0(gsub("'","",x),"(DN)")})
 samp.hom.tierOne$Gene.Name <- lapply(samp.hom.tierOne$Gene.Name,function(x){paste0(gsub("'","",x),"(HO)")})
