@@ -167,7 +167,6 @@ fun.12 <- function(x.1,x.2,...) {
 }
 
 Filter.for.tier2.pdnm.kv <- function(data) {
-
   #check for correct columns
   columns <- c("ExAC global gts","Rms Map Qual MQ", "Qual By Depth QD", "Qual","Gatk Filtered Coverage",
                "Percent Alt Read","Function", "HGMD Class", "HGMDm2site",
@@ -199,7 +198,8 @@ Filter.for.tier2.pdnm.kv <- function(data) {
 
   ER3 <- !(ER31 | ER32 | ER33 | ER34)
   data <- data[ER3,]
-  
+ 
+  if (dim(data)[1] ==0) { return(data)}
   #Exclusion rule 4:
   ER4 <- (is.na(data[normalized.name("Percent Alt Read")])
             | data[normalized.name("Percent Alt Read")] >= 0.2 
@@ -211,7 +211,8 @@ Filter.for.tier2.pdnm.kv <- function(data) {
   #Exclusion rule 5:
   Functional  <-Filter.by.Function.exclude(sapply(data[normalized.name("Function")], as.character))
   data <- data[Functional,]
-
+  
+  if (dim(data)[1] ==0) { return(data)}
   #inclusion rule 1:
   R1 <- sapply(data[normalized.name("HGMD Class")], as.character)
   R1 <- sapply(R1, function(x) length(grep("DM",x)) > 0)
@@ -268,7 +269,7 @@ Filter.for.tier2.pdnm.lof <- function(data) {
   Functional  <-fun.include(sapply(data[normalized.name("Function")], as.character))
   data <- data[Functional,]
 
-
+  if (dim(data)[1] ==0) { return(data)}
   #inclusion rule 1:
   R1 <- sapply(data[normalized.name("HGMD Class")], as.character)
   R1 <- sapply(R1, function(x) length(grep("DM",x)) > 0)
@@ -335,7 +336,7 @@ Filter.for.tier2.pdnm.lof.depl <- function(data) {
   #Exclusion rule 2:
   Functional  <-fun.include(sapply(data[normalized.name("Function")], as.character))
   data <- data[Functional,]
-
+  if (dim(data)[1] ==0) { return(data)}
   data <- data[which(data$LoF.FDR.ExAC. < 0.01 | data$LoF.pLI.ExAC. >= 0.9 | data$LoF.pRec.ExAC. >= 0.9),]
   data
 }
