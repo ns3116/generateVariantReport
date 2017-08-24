@@ -4,7 +4,7 @@
 
 IN=$1
 
-awk '{print $2"\n"$3"\n"$4}' <(sed '1d' $IN) |uniq > $(dirname $IN)/$(basename ${IN%.*}).list
+awk '{print $2"\n"$3"\n"$4}' <(sed '1d' $IN) |sort -u > $(dirname $IN)/$(basename ${IN%.*}).list
 
 while read line; do  
     alignLoc=$(mysql --defaults-group-suffix=seqdb --defaults-file=/nfs/goldstein/software/Bioinformatics_Tools/generateVariantReport/.my.cnf -e "select AlignSeqFileLoc from seqdbClone where CHGVID = '$line' ;" |head -n2|tail -n1|sed 's/_temp[0-9]\?/18/')
