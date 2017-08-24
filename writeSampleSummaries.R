@@ -17,16 +17,20 @@ writeDNM <- function(dnm,rtf){
         if((dnm[i,]$Ctrl.MAF == 0 | is.na(dnm[i,]$Ctrl.MAF)) & (dnm[i,]$Evs.All.Maf == 0 | is.na(dnm[i,]$Evs.All.Maf)) & (dnm[i,]$ExAC.global.maf == 0 | is.na(dnm[i,]$ExAC.global.maf))){
             addText(rtf,"This variant is absent from internal and external control samples. ")}
         else{addText(rtf,paste0("This variant has a control MAF of ",dnm[i,]$Ctrl.MAF*100,"% in IGM controls, ",dnm[i,]$Evs.All.Maf*100,"% in EVS, and ",dnm[i,]$ExAC.global.maf,"% in ExAC. "))}
-        if(dnm[i,]$Function == "NON_SYNONYMOUS_CODING"){addText(rtf,paste0("It is a ",gsub("_"," ",dnm[i,]$Polyphen.Humvar.Prediction)," missense variant with a PolyPhen2 score of ",dnm[i,]$Polyphen.Humvar.Score,". "))}
+        if(dnm[i,]$Function == "NON_SYNONYMOUS_CODING"){addText(rtf,paste0("It is a ",gsub("_"," ",dnm[i,]$Polyphen.Humvar.Prediction)," damaging missense variant with a PolyPhen2 score of ",dnm[i,]$Polyphen.Humvar.Score,". "))}
         adj=" ";if(!is.na(dnm[i,]$X0.05._anypopn_RVIS.tile.ExAC.) & as.vector(dnm[i,]$X0.05._anypopn_RVIS.tile.ExAC.) <= 25){adj="n in"}
         addText(rtf,paste0(gene," is a",adj,"tolerant gene with an RVIS score of ",signif(as.double(as.vector(dnm[i,]$X0.05._anypopn_RVIS.tile.ExAC.)),digits=2),". "))
-        if(!is.na(dnm[i,]$LoF.pLI.ExAC.) & as.vector(dnm[i,]$LoF.pLI.ExAC.) >= .9){addText(rtf,paste0(gene," is LoF intolerant gene with a PLI score of ",signif(as.double(as.vector(dnm[i,]$LoF.pLI.ExAC.)),digits=2),". "))}
+        if(!is.na(dnm[i,]$LoF.pNull.ExAC.) & as.vector(dnm[i,]$LoF.pNull.ExAC.) < .1){addText(rtf,paste0(gene," is a LoF intolerant gene with a pLI score of ",signif(as.double(as.vector(dnm[i,]$LoF.pLI.ExAC.)),digits=2)," and a pRec score of ",signif(as.double(as.vector(dnm[i,]$LoF.pRec.ExAC.)),digits=2),". "))}
         if(is.na(dnm[i,]$Gerp.RS.Score)){adj=" not"}else{adj=" very strongly";if(as.vector(dnm[i,]$Gerp.RS.Score)<5){adj=" strongly"};if(as.vector(dnm[i,]$Gerp.RS.Score)<4){adj=""};if(as.vector(dnm[i,]$Gerp.RS.Score)<2){adj=" weakly"};if(as.vector(dnm[i,]$Gerp.RS.Score)<0){adj=" not"}}
         addText(rtf,paste0("This site is",adj," conserved with a GERP++ RS score of ",dnm[i,]$Gerp.RS.Score,". "))
         if(!is.na(dnm[i,]$OMIM.Disease)){
             adj="";if(!is.na(dnm[i,]$MGI.Essential) & dnm[i,]$MGI.Essential == 1){adj=", and an essential gene"}
            addText(rtf,paste0(gene," is an OMIM disease gene associated with ",gsub(" \\|",", and", dnm[i,]$OMIM.Disease),adj,". "))}
         else if(!is.na(dnm[i,]$MGI.Essential) & dnm[i,]$MGI.Essential == 1){addText(rtf,paste0(gene," is an essential gene. "))}
+        if(!is.na(dnm[i,]$TraP.Score)){
+           addText(rtf,paste0("This variant has a TraP score of",dnm[i,]$TraP.Score))}
+        if(is.na(dnm[i,]$ClinVar.Clinical.Significance) & is.na(dnm[i,]$HGMD.Class)){
+           addText(rtf,paste0("This variant is not listed HGMD or ClinVar. "))}
         if(!is.na(dnm[i,]$ClinVar.Clinical.Significance)){
            addText(rtf,paste0("This variant is listed as ",tolower(dnm[i,]$ClinVar.Clinical.Significance)," in ClinVar. "))}
         if(!is.na(dnm[i,]$HGMD.Class)){
@@ -56,7 +60,7 @@ writeCHET <- function(chet,rtf){
         addText(rtf,paste0("These are ",chet[i,]$Comp.Het.Flag," variants in ",gene,". The first is a ",gsub("_"," ",tolower(chet[i,]$Function.1))," and the second is a ",gsub("_"," ",tolower(chet[i,]$Function.2)), " variant. "))
         adj=" ";if(!is.na(chet[i,]$X0.05._anypopn_RVIS.tile.ExAC..1) & as.vector(chet[i,]$X0.05._anypopn_RVIS.tile.ExAC..1) <= 25){adj="n in"}
         addText(rtf,paste0(gene," is a",adj,"tolerant gene with an RVIS score of ",signif(as.double(as.vector(chet[i,]$X0.05._anypopn_RVIS.tile.ExAC..1)),digits=2),". "))
-        if(!is.na(chet[i,]$LoF.pLI.ExAC..1) & as.vector(chet[i,]$LoF.pLI.ExAC..1) >= .9){addText(rtf,paste0(gene," is LoF intolerant gene with a PLI score of ",signif(as.double(as.vector(chet[i,]$LoF.pLI.ExAC..1)),digits=2),". "))}
+        if(!is.na(chet[i,]$LoF.pNull.ExAC..1) & as.vector(chet[i,]$LoF.pNull.ExAC..1) >= .9){addText(rtf,paste0(gene," is a LoF intolerant gene with a PLI score of ",signif(as.double(as.vector(chet[i,]$LoF.pLI.ExAC..1)),digits=2)," and a pRec score of ",signif(as.double(as.vector(dnm[i,]$LoF.pRec.ExAC..1)),digits=2),". "))}
         if(!is.na(chet[i,]$OMIM.Disease.1)){
            adj="";if(!is.na(chet[i,]$MGI.Essential.1) & chet[i,]$MGI.Essential.1 == 1){adj=", and an essential gene"}
            addText(rtf,paste0(gene," is an OMIM disease gene associated with ",gsub(" \\|",", and", chet[i,]$OMIM.Disease.1),adj,". "))}
@@ -67,9 +71,13 @@ writeCHET <- function(chet,rtf){
         if((chet[i,]$Ctrl.MAF.1 == 0 | is.na(chet[i,]$Ctrl.MAF.1)) & (chet[i,]$Evs.All.Maf.1 == 0 | is.na(chet[i,]$Evs.All.Maf.1)) & (chet[i,]$ExAC.global.maf.1 == 0 | is.na(chet[i,]$ExAC.global.maf.1))){
             addText(rtf,"The first variant is absent from internal and external control samples. ")}
         else{addText(rtf,paste0("The first variant has a control MAF of ",chet[i,]$Ctrl.MAF.1*100,"% in IGM controls, ",chet[i,]$Evs.All.Maf.1*100,"% in EVS, and ",chet[i,]$ExAC.global.maf.1,"% in ExAC. "))}
-        if(chet[i,]$Function.1 == "NON_SYNONYMOUS_CODING"){addText(rtf,paste0("It is a ",gsub("_"," ",chet[i,]$Polyphen.Humvar.Prediction.1)," missense variant with a PolyPhen2 score of ",chet[i,]$Polyphen.Humvar.Score.1,". "))}
+        if(chet[i,]$Function.1 == "NON_SYNONYMOUS_CODING"){addText(rtf,paste0("It is a ",gsub("_"," ",chet[i,]$Polyphen.Humvar.Prediction.1)," damaging missense variant with a PolyPhen2 score of ",chet[i,]$Polyphen.Humvar.Score.1,". "))}
         if(is.na(chet[i,]$Gerp.RS.Score.1)){adj=" not"}else{adj=" very strongly";if(as.vector(chet[i,]$Gerp.RS.Score.1)<5){adj=" strongly"};if(as.vector(chet[i,]$Gerp.RS.Score.1)<4){adj=""};if(as.vector(chet[i,]$Gerp.RS.Score.1)<2){adj=" weakly"};if(as.vector(chet[i,]$Gerp.RS.Score.1)<0){adj=" not"}}
         addText(rtf,paste0("This site is",adj," conserved with a GERP++ RS score of ",chet[i,]$Gerp.RS.Score.1,". "))
+        if(!is.na(chet[i,]$TraP.Score.1)){
+           addText(rtf,paste0("This variant has a TraP score of",chet[i,]$TraP.Score.1))}
+        if(is.na(chet[i,]$ClinVar.Clinical.Significance.1) & is.na(chet[i,]$HGMD.Class.1)){
+           addText(rtf,paste0("This variant is not listed in HGMD or ClinVar. "))}
         if(!is.na(chet[i,]$ClinVar.Clinical.Significance.1)){
            addText(rtf,paste0("This variant is listed as ",tolower(chet[i,]$ClinVar.Clinical.Significance.1)," in ClinVar. "))}
         if(!is.na(chet[i,]$HGMD.Class.1)){
@@ -88,9 +96,13 @@ writeCHET <- function(chet,rtf){
         if((chet[i,]$Ctrl.MAF.2 == 0 | is.na(chet[i,]$Ctrl.MAF.2)) & (chet[i,]$Evs.All.Maf.2 == 0 | is.na(chet[i,]$Evs.All.Maf.2)) & (chet[i,]$ExAC.global.maf.2 == 0 | is.na(chet[i,]$ExAC.global.maf.2))){
             addText(rtf,"The second variant is absent from internal and external control samples. ")}
         else{addText(rtf,paste0("The second variant has a control MAF of ",chet[i,]$Ctrl.MAF.2*100,"% in IGM controls, ",chet[i,]$Evs.All.Maf.2*100,"% in EVS, and ",chet[i,]$ExAC.global.maf.2,"% in ExAC. "))}
-        if(chet[i,]$Function.2 == "NON_SYNONYMOUS_CODING"){addText(rtf,paste0("It is a ",gsub("_"," ",chet[i,]$Polyphen.Humvar.Prediction.2)," missense variant with a PolyPhen2 score of ",chet[i,]$Polyphen.Humvar.Score.2,". "))}
+        if(chet[i,]$Function.2 == "NON_SYNONYMOUS_CODING"){addText(rtf,paste0("It is a ",gsub("_"," ",chet[i,]$Polyphen.Humvar.Prediction.2)," damaging missense variant with a PolyPhen2 score of ",chet[i,]$Polyphen.Humvar.Score.2,". "))}
         if(is.na(chet[i,]$Gerp.RS.Score.2)){adj=" not"}else{adj=" very strongly";if(as.vector(chet[i,]$Gerp.RS.Score.2)<5){adj=" strongly"};if(as.vector(chet[i,]$Gerp.RS.Score.2)<4){adj=""};if(as.vector(chet[i,]$Gerp.RS.Score.2)<2){adj=" weakly"};if(as.vector(chet[i,]$Gerp.RS.Score.2)<0){adj=" not"}}
         addText(rtf,paste0("This site is",adj," conserved with a GERP++ RS score of ",chet[i,]$Gerp.RS.Score.2,". "))
+        if(!is.na(chet[i,]$TraP.Score.2)){
+           addText(rtf,paste0("This variant has a TraP score of",chet[i,]$TraP.Score.2))}
+        if(is.na(chet[i,]$ClinVar.Clinical.Significance.2) & is.na(chet[i,]$HGMD.Class.2)){
+           addText(rtf,paste0("This variant is not listed in HGMD or ClinVar. ",tolower(chet[i,]$ClinVar.Clinical.Significance.2)," in ClinVar. "))}
         if(!is.na(chet[i,]$ClinVar.Clinical.Significance.2)){
            addText(rtf,paste0("This variant is listed as ",tolower(chet[i,]$ClinVar.Clinical.Significance.2)," in ClinVar. "))}
         if(!is.na(chet[i,]$HGMD.Class.2)){
