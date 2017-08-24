@@ -447,7 +447,7 @@ Filter.by.HemiHomo.Count <- function(data,threshold,is.comphet = FALSE) {
 }
 
 Filter.for.tier2.prec.kv.lof <- function(data) {
-
+  
   #check for correct columns
   columns <- c("Genotype","Function", "HGMD Class", "HGMD indel 9bpflanks", "ClinVar pathogenic indels",
                "ClinVar Clinical Significance","ClinGen", "ClinVar Pathogenic Indel Count",
@@ -498,8 +498,10 @@ Filter.for.tier2.prec.kv.lof <- function(data) {
   Functional  <-fun.functional(sapply(data[normalized.name("Function")], as.character))
 
   #inclusion rule 4:
-  R4 <- Functional & (sapply(data[normalized.name("ClinGen")], as.character) == '1')
-
+  suppressWarnings(temp <- sapply(data[normalized.name("ClinGen")], as.character) == '1')
+  temp[is.na(temp)] <- 0
+  R4 <- Functional & (temp > 0)
+  
   #inclusion rule 5:
   suppressWarnings(temp <- sapply(data[normalized.name("ClinVar Pathogenic Indel Count")], as.numeric))
   temp[is.na(temp)] <- 0
