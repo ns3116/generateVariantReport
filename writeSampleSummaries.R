@@ -28,7 +28,7 @@ writeDNM <- function(dnm,rtf){
            addText(rtf,paste0(gene," is an OMIM disease gene associated with ",gsub(" \\|",", and", dnm[i,]$OMIM.Disease),adj,". "))}
         else if(!is.na(dnm[i,]$MGI.Essential) & dnm[i,]$MGI.Essential == 1){addText(rtf,paste0(gene," is an essential gene. "))}
         if(!is.na(dnm[i,]$TraP.Score)){
-           addText(rtf,paste0("This variant has a TraP score of",dnm[i,]$TraP.Score))}
+           addText(rtf,paste0("This variant has a TraP score of ",dnm[i,]$TraP.Score,". "))}
         if(is.na(dnm[i,]$ClinVar.Clinical.Significance) & is.na(dnm[i,]$HGMD.Class)){
            addText(rtf,paste0("This variant is not listed HGMD or ClinVar. "))}
         if(!is.na(dnm[i,]$ClinVar.Clinical.Significance)){
@@ -75,7 +75,7 @@ writeCHET <- function(chet,rtf){
         if(is.na(chet[i,]$Gerp.RS.Score.1)){adj=" not"}else{adj=" very strongly";if(as.vector(chet[i,]$Gerp.RS.Score.1)<5){adj=" strongly"};if(as.vector(chet[i,]$Gerp.RS.Score.1)<4){adj=""};if(as.vector(chet[i,]$Gerp.RS.Score.1)<2){adj=" weakly"};if(as.vector(chet[i,]$Gerp.RS.Score.1)<0){adj=" not"}}
         addText(rtf,paste0("This site is",adj," conserved with a GERP++ RS score of ",chet[i,]$Gerp.RS.Score.1,". "))
         if(!is.na(chet[i,]$TraP.Score.1)){
-           addText(rtf,paste0("This variant has a TraP score of",chet[i,]$TraP.Score.1))}
+           addText(rtf,paste0("This variant has a TraP score of ",chet[i,]$TraP.Score.1,". "))}
         if(is.na(chet[i,]$ClinVar.Clinical.Significance.1) & is.na(chet[i,]$HGMD.Class.1)){
            addText(rtf,paste0("This variant is not listed in HGMD or ClinVar. "))}
         if(!is.na(chet[i,]$ClinVar.Clinical.Significance.1)){
@@ -100,7 +100,7 @@ writeCHET <- function(chet,rtf){
         if(is.na(chet[i,]$Gerp.RS.Score.2)){adj=" not"}else{adj=" very strongly";if(as.vector(chet[i,]$Gerp.RS.Score.2)<5){adj=" strongly"};if(as.vector(chet[i,]$Gerp.RS.Score.2)<4){adj=""};if(as.vector(chet[i,]$Gerp.RS.Score.2)<2){adj=" weakly"};if(as.vector(chet[i,]$Gerp.RS.Score.2)<0){adj=" not"}}
         addText(rtf,paste0("This site is",adj," conserved with a GERP++ RS score of ",chet[i,]$Gerp.RS.Score.2,". "))
         if(!is.na(chet[i,]$TraP.Score.2)){
-           addText(rtf,paste0("This variant has a TraP score of",chet[i,]$TraP.Score.2))}
+           addText(rtf,paste0("This variant has a TraP score of ",chet[i,]$TraP.Score.2,". "))}
         if(is.na(chet[i,]$ClinVar.Clinical.Significance.2) & is.na(chet[i,]$HGMD.Class.2)){
            addText(rtf,paste0("This variant is not listed in HGMD or ClinVar. ",tolower(chet[i,]$ClinVar.Clinical.Significance.2)," in ClinVar. "))}
         if(!is.na(chet[i,]$ClinVar.Clinical.Significance.2)){
@@ -140,7 +140,7 @@ writeSummary <- function(dnm,hom,hem,chet,tier2,dir){
     return
 }
 
-writeNonTrioSummary <- function(samp.kv,samp.kv5,samp.pdnm = samp.kv[FALSE,],samp.prec = samp.kv[FALSE,],samp.pchet = samp.kv[FALSE,],samp.lofd = samp.kv[FALSE,],dir=dir){
+writeNonTrioSummary <- function(samp.kv,samp.kv5 = samp.kv[FALSE,],samp.pdnm = samp.kv[FALSE,],samp.prec = samp.kv[FALSE,],samp.pchet = samp.kv[FALSE,],samp.lofd = samp.kv[FALSE,],dir=dir){
     dir.create(file.path(dir,"Sample_Summaries"),showWarnings=F)
     allSamps <- c(as.vector(samp.kv$Sample.Name),as.vector(samp.kv5$Sample.Name),as.vector(samp.pdnm$Sample.Name),as.vector(samp.prec$Sample.Name),as.vector(samp.pchet$Sample.Name))
     if(length(allSamps) == 0){return}
