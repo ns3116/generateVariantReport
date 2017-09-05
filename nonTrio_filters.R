@@ -139,6 +139,7 @@ Parse.Allele.Count.EVS <- function(s) {
 }
 
 Filter.by.Allele.Count <- function(data, threshold) {
+  if (dim(data)[1] ==0) { return(data)}
   #Get IGM allele count
   stopifnot(length(which(colnames(data) == "Major.Hom.Ctrl"))>0)
   stopifnot(length(which(colnames(data) == "Het.Ctrl"))>0)
