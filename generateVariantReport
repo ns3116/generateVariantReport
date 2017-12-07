@@ -59,7 +59,7 @@ highlightCCDSx <- function(data, myCellBlock, is.comphet = F){
     }else{
         vidCol1 <- grep("Variant.ID.1",colnames(data))
         vidCol2 <- grep("Variant.ID.2",colnames(data))
-        ind <- sapply(which(sapply(data$Transcripts.1, function(x) eval(parse(text=as.vector(x)))) < 1), function(x)x+1)
+        ind <- sapply(which(sapply(data$X.Transcripts.1, function(x) eval(parse(text=as.vector(x)))) < 1), function(x)x+1)
         col <- grep("X.Transcripts.1",colnames(data))
         if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
                             CB.setFill(myCellBlock, yellowFill, ind, col)}
@@ -383,17 +383,19 @@ write.csv(t2lof, file = "t2lof.csv")
 #Merging additional annotations to table
 #if(!opt$noVEP){system(paste0(scriptPath,"/append_vep.py -i ",opt$pt," --append_file ",opt$pt, ".vep --force_append"),wait=T)}
 pt.data = read.csv(paste0(opt$pt),na.strings="NA")
-pt.data <- cbind(pt.data, paste0(pt.data$Variant.ID,"\nnonTrio\n",pt.data$HGVSc,"\n",pt.data$HGVSp,"\n",pt.data$Samtools.Raw.Coverage,"\n",pt.data$Percent.Read.Alt,"\n",pt.data$Genotype.Qual.GQ))
-colnames(pt.data)[dim(pt.data)[2]] <- "PGM.Info"
-col.id <- grep("Sample.Name",colnames(pt.data))
-new.pos <- 1
-pt.data <- pt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(pt.data))[-(col.id-new.pos+1)])]
-col.id <- grep("Gene.Name",colnames(pt.data))
-new.pos <- 3
-pt.data <- pt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(pt.data))[-(col.id-new.pos+1)])]
-col.id <- grep("Function",colnames(pt.data))
-new.pos <- 4
-pt.data <- pt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(pt.data))[-(col.id-new.pos+1)])]
+if(dim(pt.data)[1] > 0){
+    pt.data <- cbind(pt.data, paste0(pt.data$Variant.ID,"\nnonTrio\n",pt.data$HGVSc,"\n",pt.data$HGVSp,"\n",pt.data$Samtools.Raw.Coverage,"\n",pt.data$Percent.Read.Alt,"\n",pt.data$Genotype.Qual.GQ))
+    colnames(pt.data)[dim(pt.data)[2]] <- "PGM.Info"
+    col.id <- grep("Sample.Name",colnames(pt.data))
+    new.pos <- 1
+    pt.data <- pt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(pt.data))[-(col.id-new.pos+1)])]
+    col.id <- grep("Gene.Name",colnames(pt.data))
+    new.pos <- 3
+    pt.data <- pt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(pt.data))[-(col.id-new.pos+1)])]
+    col.id <- grep("Function",colnames(pt.data))
+    new.pos <- 4
+    pt.data <- pt.data[,c(1:(new.pos-1)[-col.id],col.id,c((new.pos):ncol(pt.data))[-(col.id-new.pos+1)])]
+}
 
 data <- Filter.by.Allele.Count(pt.data,5)
 pt <- Filter.for.tier2.pdnm.kv(data)
@@ -674,9 +676,9 @@ if(opt$pheno != "NULL"){
     pheno <- read.csv(opt$pheno)
     for(i in 1:dim(sum)[1]){
         samp <- sum[i,1]
-        sampPheno <- pheno[which(pheno$CHGVID == samp),]$DetailedPhenotype
-        if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype}
-        if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype}
+        sampPheno <- pheno[which(pheno$CHGVID == samp),]$DetailedPhenotype[1]
+        if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype[1]}
+        if(sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype[1]}
         sum[i,13] <- as.vector(sampPheno)
     }
 }
