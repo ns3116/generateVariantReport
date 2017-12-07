@@ -210,7 +210,7 @@ highlightCCDSx <- function(data, myCellBlock, is.comphet = F){
     }else{
         vidCol1 <- grep("Variant.ID.1",colnames(data))
         vidCol2 <- grep("Variant.ID.2",colnames(data))
-        ind <- sapply(which(sapply(data$Transcripts.1, function(x) eval(parse(text=as.vector(x)))) < 1), function(x)x+1)
+        ind <- sapply(which(sapply(data$X.Transcripts.1, function(x) eval(parse(text=as.vector(x)))) < 1), function(x)x+1)
         col <- grep("X.Transcripts.1",colnames(data))
         if(length(ind) > 0){CB.setFill(myCellBlock, yellowFill, ind, vidCol1)
                             CB.setFill(myCellBlock, yellowFill, ind, col)}
@@ -292,9 +292,9 @@ if(opt$pheno != "NULL"){
     pheno <- read.csv(opt$pheno)
     for(i in 1:dim(sum)[1]){
         samp <- sum[i,1]
-        sampPheno <- pheno[which(pheno$CHGVID == samp),]$DetailedPhenotype
-        if(is.na(sampPheno) | sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype}
-        if(is.na(sampPheno) | sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype}
+        sampPheno <- pheno[which(pheno$CHGVID == samp),]$DetailedPhenotype[1]
+        if(is.na(sampPheno) | sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$BroadPhenotype[1]}
+        if(is.na(sampPheno) | sampPheno == "NULL" | sampPheno == "" | sampPheno == "None"){ sampPheno <- pheno[which(pheno$CHGVID == samp),]$Phenotype[1]}
         sum[i,14] <- as.vector(sampPheno[1])
     }
 }
