@@ -7,6 +7,10 @@ library("optparse")
 library("xlsx")
 
 #Functions
+wrapFormat <- function(input){
+    gsub("(.*) \\.","\\1",gsub("\n-","",gsub("^: -","",paste(input,sep=": ",collapse=": \n"))))
+}
+
 getScriptPath <- function(){
     cmd.args <- commandArgs()
     m <- regexpr("(?<=^--file=).+", cmd.args, perl=TRUE)
@@ -277,7 +281,9 @@ samp.pchet.genes <- pchet[which(pchet$Sample.Name==samp),]$Gene.Name
 samp.pdnmd.genes <- pdnmd[which(pdnmd$Sample.Name==samp),]$Gene.Name
 if(opt$summary){writeNonTrioSummary(samp.kv,samp.kv5,samp.pdnm,samp.prec,samp.pchet,samp.pdnmd,dirname(opt$out))}
 
-sum <- rbind(sum,c(samp,Nkv,Nkv5,Npdnm,Nprec,Npchet,Npdnmd,paste(gsub("'","",samp.kv.genes),collapse="\n"),paste(gsub("'","",samp.kv5.genes),collapse="\n"),paste(gsub("'","",samp.pdnm.genes),collapse="\n"),paste(gsub("'","",samp.prec.genes),collapse="\n"),paste(gsub("'","",samp.pchet.genes),collapse="\n"),paste(gsub("'","",samp.pdnmd.genes),collapse="\n"),""))
+samp.gcClinical <- unique(gsub("'","",c(as.vector(samp.kv$Gene.Name),as.vector(samp.kv5$Gene.Name),as.vector(samp.pdnm$Gene.Name),as.vector(samp.prec$Gene.Name),as.vector(samp.pchet$Gene.Name),"-")))
+
+sum <- rbind(sum,c(samp,Nkv,Nkv5,Npdnm,Nprec,Npchet,Npdnmd,paste(gsub("'","",samp.kv.genes),collapse="\n"),paste(gsub("'","",samp.kv5.genes),collapse="\n"),paste(gsub("'","",samp.pdnm.genes),collapse="\n"),paste(gsub("'","",samp.prec.genes),collapse="\n"),paste(gsub("'","",samp.pchet.genes),collapse="\n"),paste(gsub("'","",samp.pdnmd.genes),collapse="\n"),"",wrapFormat(samp.gcClinical)))
 }
 
 #Add in samples with no tier1/2 variants
@@ -300,7 +306,7 @@ if(opt$pheno != "NULL"){
 }
 #Write Excel file
 
-sum <- rbind(c("diagseq","pDNM KV",paste0("pDNM KV",opt$filter),"T2 pDNM LoF","T2 pRec LoF","T2 pCHET LoF","pDNM LoFd","pDNM KnownVar",paste0("pDNM KnownVar (<",opt$filter," Alleles)"),"Tier 2 pDNM LoF","Tier 2 pRec LoF","Tier 2 pCHET LoF","Tier 2 pDNM LoF Depleted","Phenotype"),sum)
+sum <- rbind(c("diagseq","pDNM KV",paste0("pDNM KV",opt$filter),"T2 pDNM LoF","T2 pRec LoF","T2 pCHET LoF","pDNM LoFd","pDNM KnownVar",paste0("pDNM KnownVar (<",opt$filter," Alleles)"),"Tier 2 pDNM LoF","Tier 2 pRec LoF","Tier 2 pCHET LoF","Tier 2 pDNM LoF Depleted","Phenotype","GC Clinical Fit (H/M/L)"),sum)
 
 cellBlock <- CellBlock(sum.sheet,1,1,dim(sum)[1],dim(sum)[2])
 colnames_style <- CellStyle(outwb) + Font(outwb,isBold=T) + Alignment(horizontal="ALIGN_CENTER",vertical="VERTICAL_CENTER")
@@ -327,6 +333,7 @@ for(col in c(9:13)){
 for(col in c(2:7)){
     setColumnWidth(sum.sheet,col,6)
 }
+setColumnWidth(sum.sheet,15,14)
 redFill <- Fill(foregroundColor = "red", backgroundColor = "red")
 
 for(col in c(8:13)){
